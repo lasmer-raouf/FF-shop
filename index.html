@@ -1,0 +1,2195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FierroFit | Premium Italian Gym Wear</title>
+    <link rel="icon" href="FierroFit__Train_with_Passion-removebg-preview.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/examples/js/controls/OrbitControls.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&display=swap');
+        
+        * {
+            font-family: 'Montserrat', sans-serif;
+            scroll-behavior: smooth;
+        }
+        
+        :root {
+            --primary: #111111;
+            --secondary: #ffffff;
+            --accent: #e30613;
+        }
+        
+        .page-transition {
+            transition: transform 0.6s ease-out, opacity 0.6s ease-out;
+        }
+        
+        .hidden-page {
+            transform: translateY(20px);
+            opacity: 0;
+            pointer-events: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+        }
+        
+        .active-page {
+            transform: translateY(0);
+            opacity: 1;
+            pointer-events: all;
+        }
+        
+        .product-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        
+        #canvas-container {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: -1;
+        }
+        
+        .nav-item::after {
+            content: '';
+            display: block;
+            width: 0;
+            height: 2px;
+            background: var(--accent);
+            transition: width 0.3s;
+        }
+        
+        .nav-item:hover::after {
+            width: 100%;
+        }
+        
+        /* Testimonial slider styles */
+        .slider-container {
+            scroll-snap-type: x mandatory;
+            -webkit-overflow-scrolling: touch; /* For smooth scrolling on iOS */
+        }
+        
+        .slider-item {
+            scroll-snap-align: center;
+            flex-shrink: 0; /* Prevent items from shrinking */
+        }
+
+        /* Hide scrollbar for testimonial slider */
+        .slider-container::-webkit-scrollbar {
+            display: none;
+        }
+        .slider-container {
+            -ms-overflow-style: none;  /* IE and Edge */
+            scrollbar-width: none;  /* Firefox */
+        }
+
+        /* Moving Top Bar */
+        .moving-bar {
+            white-space: nowrap;
+            overflow: hidden;
+            box-sizing: border-box;
+            position: relative;
+            width: 100%;
+        }
+
+        .moving-bar-content {
+            display: inline-block;
+            padding-left: 100%; /* Start text off-screen to the right */
+            animation: marquee 15s linear infinite; /* Adjust duration for speed */
+        }
+
+        @keyframes marquee {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(-100%, 0); }
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none; /* Hidden by default */
+            position: fixed; /* Stay in place */
+            z-index: 1000; /* Sit on top */
+            left: 0;
+            top: 0;
+            width: 100%; /* Full width */
+            height: 100%; /* Full height */
+            overflow: auto; /* Enable scroll if needed */
+            background-color: rgba(0,0,0,0.8); /* Black w/ opacity */
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background-color: #1a1a1a; /* Dark background for modal */
+            margin: auto;
+            padding: 40px;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            position: relative;
+            text-align: center;
+            color: white;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        .close-button {
+            color: #aaa;
+            position: absolute;
+            top: 15px;
+            right: 25px;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+
+        .close-button:hover,
+        .close-button:focus {
+            color: #e30613;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Shop Dropdown */
+        .dropdown:hover .dropdown-menu {
+            display: block;
+        }
+
+        /* Product Detail Page specific styles */
+        .size-option, .color-option {
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.2s ease-in-out;
+        }
+        .size-option.selected, .color-option.selected {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 2px var(--accent);
+        }
+        .color-option.selected {
+            transform: scale(1.1);
+        }
+        .size-option.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            text-decoration: line-through;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-900 relative overflow-x-hidden">
+    <!-- Moving Top Bar -->
+    <div class="bg-red-600 text-white text-sm py-2 fixed top-0 left-0 w-full z-50 moving-bar">
+        <div class="moving-bar-content font-bold uppercase">
+            A NEW DROP EVERY MONTH! STAY TUNED FOR THE LATEST ITALIAN GYM WEAR. &bull; FREE SHIPPING ON ORDERS OVER €100! &bull; JOIN THE FIERROFIT MOVEMENT! &bull;
+        </div>
+    </div>
+
+    <!-- Canvas for 3D background animation -->
+    <div id="canvas-container"></div>
+    
+    <!-- Navigation -->
+    <nav class="bg-black text-white shadow-lg fixed w-full z-50" style="top: 36px;"> <!-- Adjusted top for moving bar -->
+        <div class="container mx-auto px-4">
+            <div class="flex justify-between items-center py-4">
+                <div class="flex items-center space-x-4">
+                    <a href="#" class="flex items-center" onclick="showPage('home')">
+                        <span class="text-2xl font-bold text-white">FIERRO<span class="text-red-600">FIT</span></span>
+                    </a>
+                </div>
+                
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="#" class="nav-item text-white hover:text-red-500 transition duration-300" onclick="showPage('home')">HOME</a>
+                    
+                    <div class="relative dropdown">
+                        <a href="#" class="nav-item text-white hover:text-red-500 transition duration-300" onclick="showPage('shop')">SHOP</a>
+                        <div class="dropdown-menu absolute hidden bg-black text-white pt-2 rounded-md shadow-lg z-10 min-w-[160px]">
+                            <a href="#" class="block px-4 py-2 hover:bg-gray-800" onclick="showPage('shop'); filterShopByCategory('Men\'s');">Men's</a>
+                            <a href="#" class="block px-4 py-2 hover:bg-gray-800" onclick="showPage('shop'); filterShopByCategory('Women\'s');">Women's</a>
+                            <a href="#" class="block px-4 py-2 hover:bg-gray-800" onclick="showPage('shop'); filterShopByCategory('Accessories');">Accessories</a>
+                            <a href="#" class="block px-4 py-2 hover:bg-gray-800" onclick="showPage('shop'); filterShopByCategory('All');">All Products</a>
+                        </div>
+                    </div>
+
+                    <a href="#" class="nav-item text-white hover:text-red-500 transition duration-300" onclick="showPage('new-drops')">NEW DROPS</a>
+                    <a href="#" class="nav-item text-white hover:text-red-500 transition duration-300" onclick="showPage('articles')">ARTICLES</a>
+                    <a href="#" class="nav-item text-white hover:text-red-500 transition duration-300" onclick="showPage('about')">ABOUT</a>
+                </div>
+                
+                <div class="flex items-center space-x-4">
+                    <button class="p-2 text-white hover:text-red-500 transition duration-300" onclick="showPage('cart')">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                        </svg>
+                    </button>
+                    <button class="p-2 text-white hover:text-red-500 transition duration-300" onclick="showPage('search')">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                    </button>
+                    <button class="p-2 text-white hover:text-red-500 transition duration-300" onclick="showPage('account')">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                        </svg>
+                    </button>
+                    <button class="md:hidden p-2 text-white hover:text-red-500 transition duration-300" id="menu-toggle">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Mobile menu -->
+        <div class="md:hidden bg-black hidden" id="mobile-menu">
+            <div class="px-2 pt-2 pb-3 space-y-1">
+                <a href="#" class="block px-3 py-2 text-white hover:text-red-500 transition duration-300" onclick="showPage('home'); toggleMenu()">HOME</a>
+                <a href="#" class="block px-3 py-2 text-white hover:text-red-500 transition duration-300" onclick="showPage('shop'); toggleMenu()">SHOP</a>
+                <a href="#" class="block px-3 py-2 text-white hover:text-red-500 transition duration-300" onclick="showPage('new-drops'); toggleMenu()">NEW DROPS</a>
+                <a href="#" class="block px-3 py-2 text-white hover:text-red-500 transition duration-300" onclick="showPage('articles'); toggleMenu()">ARTICLES</a>
+                <a href="#" class="block px-3 py-2 text-white hover:text-red-500 transition duration-300" onclick="showPage('about'); toggleMenu()">ABOUT</a>
+            </div>
+        </div>
+    </nav>
+    
+    <!-- Home Page -->
+    <div id="home" class="page-transition active-page min-h-screen pt-16"> <!-- Adjusted pt for moving bar -->
+        <!-- Hero Section -->
+        <section class="relative h-screen flex items-center justify-center bg-black text-white overflow-hidden">
+            <div class="absolute inset-0 bg-black opacity-70 z-10"></div>
+            <video autoplay muted loop class="absolute inset-0 w-full h-full object-cover z-0">
+                <source src="https://assets.mixkit.co/videos/preview/mixkit-man-doing-push-ups-3442-large.mp4" type="video/mp4">
+            </video>
+            
+            <div class="container mx-auto px-4 z-20 text-center">
+                <h1 class="text-5xl md:text-7xl font-bold mb-6">FORGE YOUR <span class="text-red-600">LEGACY</span></h1>
+                <p class="text-xl md:text-2xl mb-8 max-w-3xl mx-auto">Premium Italian gym apparel for those who train with passion. Designed in Agrigento, tested in gyms worldwide.</p>
+                <div class="flex justify-center space-x-4">
+                    <button class="bg-red-600 hover:bg-red-700 text-white px-8 py-3 rounded-full font-bold transition duration-300 transform hover:scale-105" onclick="showPage('shop')">
+                        SHOP NOW
+                    </button>
+                    <button class="bg-transparent border-2 border-white hover:bg-white hover:text-black text-white px-8 py-3 rounded-full font-bold transition duration-300 transform hover:scale-105" onclick="showPage('new-drops')">
+                        NEW DROPS
+                    </button>
+                </div>
+
+                <!-- New Merch Drop Timer and Preorder Section -->
+                <div class="mt-12 bg-gray-900 bg-opacity-80 p-6 rounded-lg max-w-md mx-auto border-2 border-red-600">
+                    <p class="text-xl md:text-2xl font-bold text-red-500 mb-4">NEW MERCH DROPPING SOON!</p>
+                    <div id="countdown-timer" class="text-4xl md:text-5xl font-extrabold text-white mb-6">
+                        10:00
+                    </div>
+                    <p class="text-lg text-gray-300 mb-6">Be ready for the next FierroFit collection!</p>
+                    <div class="flex flex-col space-y-4">
+                        <button class="bg-red-600 hover:bg-red-700 text-white px-8 py-3 rounded-full font-bold transition duration-300 transform hover:scale-105" onclick="alert('Preorder functionality coming soon!');">
+                            PREORDER NOW
+                        </button>
+                        <button class="bg-transparent border-2 border-white hover:bg-white hover:text-black text-white px-8 py-3 rounded-full font-bold transition duration-300 transform hover:scale-105" onclick="alert('You will be notified when it drops!');">
+                            NOTIFY ME WHEN IT DROPS
+                        </button>
+                    </div>
+                </div>
+                <!-- End New Merch Drop Timer and Preorder Section -->
+
+            </div>
+        </section>
+        
+        <!-- Featured Collections -->
+        <section class="py-20 bg-white">
+            <div class="container mx-auto px-4">
+                <h2 class="text-3xl md:text-4xl font-bold mb-12 text-center">FEATURED COLLECTIONS</h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    <!-- Collection 1 -->
+                    <div class="bg-gray-900 text-white rounded-xl overflow-hidden group relative">
+                        <img src="Untitled-1.png" alt="Male fitness model wearing black and red tank top lifting weights in gym" class="w-full h-full object-cover transition duration-500 group-hover:opacity-70">
+                        <div class="absolute inset-0 flex flex-col justify-end p-8 bg-gradient-to-t from-black to-transparent">
+                            <h3 class="text-2xl font-bold mb-2">TANK TOPS</h3>
+                            <p class="mb-4">Designed for maximum mobility and ventilation</p>
+                            <button class="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-full font-bold transition duration-300 w-fit" onclick="showPage('shop')">
+                                SHOP
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Collection 2 -->
+                    <div class="bg-gray-900 text-white rounded-xl overflow-hidden group relative">
+                        <img src="https://placehold.co/800x1000" alt="Female athlete in white and red sports bra and leggings doing squats" class="w-full h-full object-cover transition duration-500 group-hover:opacity-70">
+                        <div class="absolute inset-0 flex flex-col justify-end p-8 bg-gradient-to-t from-black to-transparent">
+                            <h3 class="text-2xl font-bold mb-2">LEGGINGS</h3>
+                            <p class="mb-4">Compression fit for ultimate performance</p>
+                            <button class="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-full font-bold transition duration-300 w-fit" onclick="showPage('shop')">
+                                SHOP
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Collection 3 -->
+                    <div class="bg-gray-900 text-white rounded-xl overflow-hidden group relative">
+                        <img src="https://placehold.co/800x1000" alt="Athlete in black and red hoodie and joggers lifting dumbbell with intense focus" class="w-full h-full object-cover transition duration-500 group-hover:opacity-70">
+                        <div class="absolute inset-0 flex flex-col justify-end p-8 bg-gradient-to-t from-black to-transparent">
+                            <h3 class="text-2xl font-bold mb-2">HOODIES & JOGGERS</h3>
+                            <p class="mb-4">Post-workout comfort meets streetwear style</p>
+                            <button class="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-full font-bold transition duration-300 w-fit" onclick="showPage('shop')">
+                                SHOP
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- New Arrivals -->
+        <section class="py-20 bg-gray-100">
+            <div class="container mx-auto px-4">
+                <div class="flex justify-between items-center mb-12">
+                    <h2 class="text-3xl md:text-4xl font-bold">NEW ARRIVALS</h2>
+                    <a href="#" class="text-red-600 font-bold hover:underline" onclick="showPage('new-drops')">VIEW ALL</a>
+                </div>
+                
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+                    <!-- Product 1 -->
+                    <div class="product-card bg-white rounded-xl overflow-hidden shadow-md transition duration-300 cursor-pointer" onclick="showProductDetail(1)">
+                        <div class="relative">
+                            <img src="Untitled-2.png" alt="Black tank top with FIERRO logo in red embroidery on chest" class="w-full h-64 object-cover">
+                            <span class="absolute top-4 right-4 bg-red-600 text-white text-xs px-2 py-1 rounded">NEW</span>
+                        </div>
+                        <div class="p-4">
+                            <h3 class="font-bold text-lg mb-1">FIERRO Logo Tank</h3>
+                            <p class="text-gray-600 mb-2">Black/Red</p>
+                            <p class="font-bold text-black">€39.90</p>
+                            <button class="mt-3 w-full bg-black text-white py-2 rounded-lg hover:bg-red-600 transition duration-300" onclick="event.stopPropagation(); addToCart('FIERRO Logo Tank', 39.90)">
+                                ADD TO CART
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Product 2 -->
+                    <div class="product-card bg-white rounded-xl overflow-hidden shadow-md transition duration-300 cursor-pointer" onclick="showProductDetail(2)">
+                        <div class="relative">
+                            <img src="Untitled-3.png" alt="White performance shorts with red FIERRO branding on thigh" class="w-full h-64 object-cover">
+                            <span class="absolute top-4 right-4 bg-red-600 text-white text-xs px-2 py-1 rounded">NEW</span>
+                        </div>
+                        <div class="p-4">
+                            <h3 class="font-bold text-lg mb-1">Performance Shorts</h3>
+                            <p class="text-gray-600 mb-2">White/Red</p>
+                            <p class="font-bold text-black">€49.90</p>
+                            <button class="mt-3 w-full bg-black text-white py-2 rounded-lg hover:bg-red-600 transition duration-300" onclick="event.stopPropagation(); addToCart('Performance Shorts', 49.90)">
+                                ADD TO CART
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Product 3 -->
+                    <div class="product-card bg-white rounded-xl overflow-hidden shadow-md transition duration-300 cursor-pointer" onclick="showProductDetail(3)">
+                        <div class="relative">
+                            <img src="Untitled-4.png" alt="Black and red camo print training leggings with FIERRO logo" class="w-full h-64 object-cover">
+                        </div>
+                        <div class="p-4">
+                            <h3 class="font-bold text-lg mb-1">Training Leggings</h3>
+                            <p class="text-gray-600 mb-2">Black Camo</p>
+                            <p class="font-bold text-black">€59.90</p>
+                            <button class="mt-3 w-full bg-black text-white py-2 rounded-lg hover:bg-red-600 transition duration-300" onclick="event.stopPropagation(); addToCart('Training Leggings', 59.90)">
+                                ADD TO CART
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Product 4 -->
+                    <div class="product-card bg-white rounded-xl overflow-hidden shadow-md transition duration-300 cursor-pointer" onclick="showProductDetail(4)">
+                        <div class="relative">
+                            <img src="Untitled-5.png" alt="Red oversized hoodie with FIERRO branding across chest and back" class="w-full h-64 object-cover">
+                            <span class="absolute top-4 right-4 bg-red-600 text-white text-xs px-2 py-1 rounded">NEW</span>
+                        </div>
+                        <div class="p-4">
+                            <h3 class="font-bold text-lg mb-1">Oversize Hoodie</h3>
+                            <p class="text-gray-600 mb-2">Red/Black</p>
+                            <p class="font-bold text-black">€69.90</p>
+                            <button class="mt-3 w-full bg-black text-white py-2 rounded-lg hover:bg-red-600 transition duration-300" onclick="event.stopPropagation(); addToCart('Oversize Hoodie', 69.90)">
+                                ADD TO CART
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Testimonials -->
+        <section class="py-20 bg-black text-white">
+            <div class="container mx-auto px-4">
+                <h2 class="text-3xl md:text-4xl font-bold mb-12 text-center">WHAT OUR CLIENTS SAY</h2>
+                
+                <div class="testimonial-slider">
+                    <div class="testimonial-track flex space-x-4 pb-2" id="testimonial-track">
+                        <!-- Testimonial 1 -->
+                        <div class="testimonial-slide bg-gray-900 p-8 rounded-xl min-w-[80%] md:min-w-[40%]">
+                            <div class="flex items-center mb-4">
+                                <div class="w-12 h-12 rounded-full overflow-hidden mr-4">
+                                    <img src="https://placehold.co/100x100" alt="Portrait of Marco, male bodybuilder with short beard" class="w-full h-full object-cover">
+                                </div>
+                                <div>
+                                    <h4 class="font-bold">Marco R.</h4>
+                                    <p class="text-gray-400">Professional Bodybuilder</p>
+                                </div>
+                            </div>
+                            <p class="italic">"The FIERRO tank tops are my favorite for training. The material is durable and the fit is perfect for my physique. I get compliments every time I wear them."</p>
+                        </div>
+                        
+                        <!-- Testimonial 2 -->
+                        <div class="testimonial-slide bg-gray-900 p-8 rounded-xl min-w-[80%] md:min-w-[40%]">
+                            <div class="flex items-center mb-4">
+                                <div class="w-12 h-12 rounded-full overflow-hidden mr-4">
+                                    <img src="https://placehold.co/100x100" alt="Portrait of Sofia, female fitness influencer smiling" class="w-full h-full object-cover">
+                                </div>
+                                <div>
+                                    <h4 class="font-bold">Sofia L.</h4>
+                                    <p class="text-gray-400">Fitness Influencer</p>
+                                </div>
+                            </div>
+                            <p class="italic">"I was skeptical about leggings that don't roll down during squats - but FIERRO nailed it! These are my go-to for all my lower body workouts."</p>
+                        </div>
+                        
+                        <!-- Testimonial 3 -->
+                        <div class="testimonial-slide bg-gray-900 p-8 rounded-xl min-w-[80%] md:min-w-[40%]">
+                            <div class="flex items-center mb-4">
+                                <div class="w-12 h-12 rounded-full overflow-hidden mr-4">
+                                    <img src="https://placehold.co/100x100" alt="Portrait of Antonio, gym owner with muscles and tattoos" class="w-full h-full object-cover">
+                                </div>
+                                <div>
+                                    <h4 class="font-bold">Antonio G.</h4>
+                                    <p class="text-gray-400">Gym Owner</p>
+                                </div>
+                            </div>
+                            <p class="italic">"As a gym owner, I see hundreds of brands come through my doors. FIERRO stands out for its quality and Italian design. My members love it!"</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Newsletter -->
+        <section class="py-20 bg-red-600 text-white">
+            <div class="container mx-auto px-4 text-center">
+                <h2 class="text-3xl md:text-4xl font-bold mb-4">JOIN THE FIERRO MOVEMENT</h2>
+                <p class="mb-8 max-w-2xl mx-auto">Be the first to know about new releases, exclusive drops, and special offers. Sign up for our newsletter.</p>
+                
+                <form class="flex flex-col md:flex-row justify-center max-w-lg mx-auto gap-4">
+                    <input type="email" placeholder="Your Email" class="px-4 py-3 rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-white w-full">
+                    <button type="submit" class="bg-black text-white px-6 py-3 rounded-lg font-bold hover:bg-gray-900 transition duration-300">
+                        SUBSCRIBE
+                    </button>
+                </form>
+                
+                <p class="text-sm mt-4">We respect your privacy. Unsubscribe at any time.</p>
+            </div>
+        </section>
+    </div>
+    
+    <!-- Shop Page -->
+    <div id="shop" class="page-transition hidden-page pt-16"> <!-- Adjusted pt for moving bar -->
+        <section class="pt-16 pb-20 min-h-screen bg-white">
+            <div class="container mx-auto px-4">
+                <div class="flex flex-col md:flex-row justify-between items-start mb-8">
+                    <div>
+                        <h1 class="text-3xl md:text-4xl font-bold mb-2">SHOP ALL</h1>
+                        <p class="text-gray-600">Premium Italian gym apparel for the dedicated athlete</p>
+                    </div>
+                    
+                    <div class="mt-4 md:mt-0 flex space-x-4">
+                        <div class="relative">
+                            <select id="sort-by" class="appearance-none bg-white border border-gray-300 rounded-lg px-4 py-2 pr-8 focus:outline-none focus:ring-2 focus:ring-red-500">
+                                <option value="featured">Sort by: Featured</option>
+                                <option value="newest">Newest</option>
+                                <option value="price-asc">Price: Low to High</option>
+                                <option value="price-desc">Price: High to Low</option>
+                            </select>
+                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+                                <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                    <!-- Sidebar Filters -->
+                    <div class="md:col-span-1 bg-gray-50 p-4 rounded-lg">
+                        <h3 class="font-bold text-lg mb-4">FILTERS</h3>
+                        
+                        <div class="mb-6">
+                            <h4 class="font-medium mb-2">Category</h4>
+                            <div class="space-y-2" id="category-filters">
+                                <label class="flex items-center">
+                                    <input type="checkbox" value="Tops" class="category-filter rounded text-red-600 focus:ring-red-500">
+                                    <span class="ml-2">Tops</span>
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="checkbox" value="Bottoms" class="category-filter rounded text-red-600 focus:ring-red-500">
+                                    <span class="ml-2">Bottoms</span>
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="checkbox" value="Hoodies & Jackets" class="category-filter rounded text-red-600 focus:ring-red-500">
+                                    <span class="ml-2">Hoodies & Jackets</span>
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="checkbox" value="Accessories" class="category-filter rounded text-red-600 focus:ring-red-500">
+                                    <span class="ml-2">Accessories</span>
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="checkbox" value="Men's" class="category-filter rounded text-red-600 focus:ring-red-500">
+                                    <span class="ml-2">Men's</span>
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="checkbox" value="Women's" class="category-filter rounded text-red-600 focus:ring-red-500">
+                                    <span class="ml-2">Women's</span>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-6">
+                            <h4 class="font-medium mb-2">Price</h4>
+                            <div class="space-y-2">
+                                <input type="range" min="0" max="200" value="200" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-red-500" id="price-range">
+                                <div class="flex justify-between">
+                                    <span>€0</span>
+                                    <span id="price-range-value">€200+</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-6">
+                            <h4 class="font-medium mb-2">Color</h4>
+                            <div class="flex flex-wrap gap-2">
+                                <button class="w-6 h-6 rounded-full bg-black border-2 border-white focus:ring-2 focus:ring-red-500"></button>
+                                <button class="w-6 h-6 rounded-full bg-white border-2 border-gray-300 focus:ring-2 focus:ring-red-500"></button>
+                                <button class="w-6 h-6 rounded-full bg-red-600 border-2 border-white focus:ring-2 focus:ring-red-500"></button>
+                                <button class="w-6 h-6 rounded-full bg-gray-400 border-2 border-white focus:ring-2 focus:ring-red-500"></button>
+                                <button class="w-6 h-6 rounded-full bg-blue-500 border-2 border-white focus:ring-2 focus:ring-red-500"></button>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-6">
+                            <h4 class="font-medium mb-2">Size</h4>
+                            <div class="flex flex-wrap gap-2">
+                                <button class="w-10 h-10 rounded-lg border border-gray-300 hover:bg-black hover:text-white transition">XS</button>
+                                <button class="w-10 h-10 rounded-lg border border-gray-300 hover:bg-black hover:text-white transition">S</button>
+                                <button class="w-10 h-10 rounded-lg border border-gray-300 hover:bg-black hover:text-white transition">M</button>
+                                <button class="w-10 h-10 rounded-lg border border-gray-300 hover:bg-black hover:text-white transition">L</button>
+                                <button class="w-10 h-10 rounded-lg border border-gray-300 hover:bg-black hover:text-white transition">XL</button>
+                                <button class="w-10 h-10 rounded-lg border border-gray-300 hover:bg-black hover:text-white transition">XXL</button>
+                            </div>
+                        </div>
+                        
+                        <button class="w-full bg-red-600 text-white py-2 rounded-lg font-bold hover:bg-red-700 transition" id="apply-filters-btn">
+                            APPLY FILTERS
+                        </button>
+                    </div>
+                    
+                    <!-- Product Grid -->
+                    <div class="md:col-span-3">
+                        <div class="grid grid-cols-2 md:grid-cols-3 gap-6" id="product-grid">
+                            <!-- Products will be dynamically loaded here -->
+                        </div>
+                        
+                        <!-- Pagination -->
+                        <div class="mt-12 flex justify-center" id="shop-pagination">
+                            <nav class="flex items-center space-x-2">
+                                <button class="px-3 py-1 rounded-lg border border-gray-300 text-gray-500 hover:bg-gray-100" id="prev-page-btn">Previous</button>
+                                <div id="pagination-numbers" class="flex space-x-2">
+                                    <!-- Page numbers will be dynamically loaded here -->
+                                </div>
+                                <button class="px-3 py-1 rounded-lg border border-gray-300 text-gray-500 hover:bg-gray-100" id="next-page-btn">Next</button>
+                            </nav>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+    
+    <!-- New Drops Page -->
+    <div id="new-drops" class="page-transition hidden-page pt-16"> <!-- Adjusted pt for moving bar -->
+        <section class="pt-16 pb-20 min-h-screen bg-black text-white">
+            <div class="container mx-auto px-4">
+                <div class="text-center mb-16">
+                    <h1 class="text-3xl md:text-5xl font-bold mb-4">NEW DROPS</h1>
+                    <p class="text-xl md:text-2xl max-w-2xl mx-auto">Our latest collection designed for peak performance. Inspired by Italian craftsmanship.</p>
+                </div>
+                
+                <!-- Main Drop Banner -->
+                <div class="relative mb-16 rounded-xl overflow-hidden">
+                    <img src="https://placehold.co/1600x900" alt="Hero shot of FIERRO winter collection featuring models in black and red gym wear lifting weights in dramatic lighting" class="w-full h-auto md:h-[700px] object-cover">
+                    <div class="absolute inset-0 bg-gradient-to-t from-black to-transparent"></div>
+                    <div class="absolute inset-0 flex flex-col justify-end p-8 md:p-16">
+                        <div class="max-w-4xl">
+                            <h2 class="text-3xl md:text-5xl font-bold mb-4">WINTER COLLECTION</h2>
+                            <p class="text-lg md:text-xl mb-6">Engineered for cold weather training with premium Italian fabrics and thermal insulation technology.</p>
+                            
+                            <div class="flex space-x-4">
+                                <button class="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-full font-bold transition duration-300" onclick="showPage('shop')">
+                                    SHOP NOW
+                                </button>
+                                <button class="bg-transparent border-2 border-white hover:bg-white hover:text-black text-white px-6 py-3 rounded-full font-bold transition duration-300" id="view-lookbook">
+                                    VIEW LOOKBOOK
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Featured Drop Items -->
+                <h2 class="text-2xl md:text-3xl font-bold mb-8">FEATURED ITEMS</h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
+                    <!-- Featured Item 1 -->
+                    <div class="bg-gray-900 rounded-xl overflow-hidden group relative cursor-pointer" onclick="showProductDetail(14)">
+                        <img src="Untitled-8.png" alt="Thermal lined hoodie with FIERRO logo embroidery on chest and Italian flag detail on sleeve" class="w-full h-full object-cover transition duration-500 group-hover:opacity-70">
+                        <div class="absolute inset-0 flex flex-col justify-end p-8 bg-gradient-to-t from-black to-transparent">
+                            <h3 class="text-2xl font-bold mb-2">THERMAL HOODIE</h3>
+                            <p class="mb-4">€79.90</p>
+                            <button class="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-full font-bold transition duration-300 w-fit" onclick="event.stopPropagation(); addToCart('Thermal Hoodie', 79.90)">
+                                ADD TO CART
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Featured Item 2 -->
+                    <div class="bg-gray-900 rounded-xl overflow-hidden group relative cursor-pointer" onclick="showProductDetail(15)">
+                        <img src="https://placehold.co/800x1000" alt="Black thermal joggers with red FIERRO branding down the leg" class="w-full h-full object-cover transition duration-500 group-hover:opacity-70">
+                        <div class="absolute inset-0 flex flex-col justify-end p-8 bg-gradient-to-t from-black to-transparent">
+                            <h3 class="text-2xl font-bold mb-2">THERMAL JOGGERS</h3>
+                            <p class="mb-4">€64.90</p>
+                            <button class="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-full font-bold transition duration-300 w-fit" onclick="event.stopPropagation(); addToCart('Thermal Joggers', 64.90)">
+                                ADD TO CART
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Featured Item 3 -->
+                    <div class="bg-gray-900 rounded-xl overflow-hidden group relative cursor-pointer" onclick="showProductDetail(16)">
+                        <img src="https://placehold.co/800x1000" alt="Red long sleeve compression top with FIERRO logo on chest" class="w-full h-full object-cover transition duration-500 group-hover:opacity-70">
+                        <div class="absolute inset-0 flex flex-col justify-end p-8 bg-gradient-to-t from-black to-transparent">
+                            <h3 class="text-2xl font-bold mb-2">COMPRESSION TOP</h3>
+                            <p class="mb-4">€49.90</p>
+                            <button class="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-full font-bold transition duration-300 w-fit" onclick="event.stopPropagation(); addToCart('Compression Top', 49.90)">
+                                ADD TO CART
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Upcoming Drops -->
+                <h2 class="text-2xl md:text-3xl font-bold mb-8">UPCOMING DROPS</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div class="bg-gray-900 text-white rounded-xl overflow-hidden relative">
+                        <img src="https://placehold.co/1200x600" alt="FIERRO Spring Collection banner with models in bright gym wear" class="w-full h-64 object-cover">
+                        <div class="p-8">
+                            <h3 class="text-2xl font-bold mb-2">SPRING COLLECTION '24</h3>
+                            <p class="mb-4 text-gray-400">Lighter fabrics, vibrant colors. Drops March 15th.</p>
+                            <button class="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-full font-bold transition duration-300">
+                                LEARN MORE
+                            </button>
+                        </div>
+                    </div>
+                    <div class="bg-gray-900 text-white rounded-xl overflow-hidden relative">
+                        <img src="https://placehold.co/1200x600" alt="FIERRO Accessories Collection banner with gym bags and water bottles" class="w-full h-64 object-cover">
+                        <div class="p-8">
+                            <h3 class="text-2xl font-bold mb-2">ACCESSORIES LINE</h3>
+                            <p class="mb-4 text-gray-400">Elevate your gym essentials. Drops April 1st.</p>
+                            <button class="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-full font-bold transition duration-300">
+                                LEARN MORE
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Articles Page -->
+    <div id="articles" class="page-transition hidden-page pt-16"> <!-- Adjusted pt for moving bar -->
+        <section class="pt-16 pb-20 min-h-screen bg-white">
+            <div class="container mx-auto px-4">
+                <h1 class="text-3xl md:text-4xl font-bold mb-12 text-center">FIERROFIT ARTICLES</h1>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8" id="articles-grid">
+                    <!-- Articles will be dynamically loaded here -->
+                </div>
+                
+                <!-- Pagination -->
+                <div class="mt-12 flex justify-center" id="articles-pagination">
+                    <nav class="flex items-center space-x-2">
+                        <button class="px-3 py-1 rounded-lg border border-gray-300 text-gray-500 hover:bg-gray-100" id="articles-prev-page-btn">Previous</button>
+                        <div id="articles-pagination-numbers" class="flex space-x-2">
+                            <!-- Page numbers will be dynamically loaded here -->
+                        </div>
+                        <button class="px-3 py-1 rounded-lg border border-gray-300 text-gray-500 hover:bg-gray-100" id="articles-next-page-btn">Next</button>
+                    </nav>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- About Page -->
+    <div id="about" class="page-transition hidden-page pt-16"> <!-- Adjusted pt for moving bar -->
+        <section class="pt-16 pb-20 min-h-screen bg-black text-white">
+            <div class="container mx-auto px-4">
+                <div class="text-center mb-16">
+                    <h1 class="text-3xl md:text-5xl font-bold mb-4">ABOUT FIERROFIT</h1>
+                    <p class="text-xl md:text-2xl max-w-3xl mx-auto">Passion, Performance, Italian Craftsmanship.</p>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+                    <div class="order-2 md:order-1">
+                        <img src="FierroFit_ Train with Passion.png" alt="FIERROFIT factory or design studio" class="rounded-xl shadow-lg">
+                    </div>
+                    <div class="order-1 md:order-2">
+                        <h2 class="text-3xl font-bold mb-4">OUR STORY</h2>
+                        <p class="text-lg mb-6 text-gray-300">
+                            Born from the heart of Agrigento, FierroFit was founded by a team of dedicated athletes and fashion designers with a singular vision: to create gym wear that embodies the strength and style of Italian heritage. We believe that what you wear should empower your performance and reflect your dedication.
+                        </p>
+                        <p class="text-lg text-gray-300">
+                            Every stitch, every fabric choice, every design element is meticulously crafted to meet the demands of the most intense workouts, while ensuring you look and feel your best. FierroFit is more than just clothing; it's a commitment to excellence, a celebration of the "Fierro" (iron) spirit within every athlete.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mt-20 text-center">
+                    <div class="p-6 bg-gray-900 rounded-xl shadow-md">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto mb-4 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.001 12.001 0 002 12c0 2.757 1.125 5.22 2.938 7.071L12 22l7.062-2.929A12.001 12.001 0 0022 12c0-2.757-1.125-5.22-2.938-7.071z" />
+                        </svg>
+                        <h3 class="font-bold text-xl mb-2">QUALITY FIRST</h3>
+                        <p class="text-gray-400">Premium fabrics and rigorous testing ensure durability and performance.</p>
+                    </div>
+                    <div class="p-6 bg-gray-900 rounded-xl shadow-md">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto mb-4 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 4v16M17 4v16M3 8h18M3 16h18M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                        <h3 class="font-bold text-xl mb-2">ITALIAN DESIGN</h3>
+                        <p class="text-gray-400">Sleek aesthetics and functional design inspired by Agrigento's fashion.</p>
+                    </div>
+                    <div class="p-6 bg-gray-900 rounded-xl shadow-md">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto mb-4 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                        </svg>
+                        <h3 class="font-bold text-xl mb-2">PERFORMANCE DRIVEN</h3>
+                        <p class="text-gray-400">Engineered to enhance your workouts and support every movement.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Cart Page -->
+    <div id="cart" class="page-transition hidden-page pt-16"> <!-- Adjusted pt for moving bar -->
+        <section class="pt-16 pb-20 min-h-screen bg-gray-100">
+            <div class="container mx-auto px-4">
+                <h1 class="text-3xl md:text-4xl font-bold mb-8 text-center">YOUR SHOPPING CART</h1>
+                
+                <div class="flex flex-col lg:flex-row gap-8">
+                    <!-- Cart Items -->
+                    <div class="lg:w-2/3 bg-white p-6 rounded-xl shadow-md">
+                        <div id="cart-items-container">
+                            <!-- Cart items will be dynamically loaded here -->
+                            <p id="empty-cart-message" class="text-center text-gray-500 py-8">Your cart is empty.</p>
+                        </div>
+                        
+                        <div class="flex justify-between items-center mt-6">
+                            <button class="text-red-600 hover:underline" onclick="showPage('shop')">Continue Shopping</button>
+                            <button class="bg-gray-200 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-300 transition duration-300" onclick="clearCart()">Clear Cart</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Order Summary -->
+                    <div class="lg:w-1/3 bg-white p-6 rounded-xl shadow-md">
+                        <h2 class="text-2xl font-bold mb-4">ORDER SUMMARY</h2>
+                        <div class="space-y-2 border-b border-gray-200 pb-4 mb-4">
+                            <div class="flex justify-between">
+                                <span>Subtotal</span>
+                                <span id="cart-subtotal">€0.00</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>Discount</span>
+                                <span id="cart-discount">-€0.00</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>Shipping</span>
+                                <span id="cart-shipping">€0.00</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>Tax (22% Italian VAT)</span>
+                                <span id="cart-tax">€0.00</span>
+                            </div>
+                        </div>
+                        <div class="flex justify-between font-bold text-xl mb-6">
+                            <span>TOTAL</span>
+                            <span id="cart-total">€0.00</span>
+                        </div>
+
+                        <div class="mb-6">
+                            <h3 class="font-bold text-lg mb-2">Apply Coupon</h3>
+                            <div class="flex space-x-2">
+                                <input type="text" id="coupon-input" placeholder="Enter coupon code" class="flex-grow px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-red-500">
+                                <button class="bg-black text-white px-4 py-2 rounded-lg hover:bg-red-600 transition duration-300" onclick="applyCoupon()">Apply</button>
+                            </div>
+                            <p id="coupon-message" class="text-sm mt-2 text-red-600"></p>
+                        </div>
+
+                        <button class="w-full bg-red-600 text-white py-3 rounded-lg font-bold hover:bg-red-700 transition duration-300">
+                            PROCEED TO CHECKOUT
+                        </button>
+                        <p class="text-center text-gray-500 text-sm mt-4">Shipping calculated at checkout.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Search Page -->
+    <div id="search" class="page-transition hidden-page pt-16"> <!-- Adjusted pt for moving bar -->
+        <section class="pt-16 pb-20 min-h-screen bg-gray-100">
+            <div class="container mx-auto px-4">
+                <h1 class="text-3xl md:text-4xl font-bold mb-8 text-center">SEARCH FIERROFIT</h1>
+                
+                <div class="max-w-2xl mx-auto mb-12">
+                    <div class="relative">
+                        <input type="text" placeholder="Search for products, articles, collections..." class="w-full px-6 py-3 rounded-full border-2 border-gray-300 focus:outline-none focus:border-red-600 text-lg" id="search-input">
+                        <button class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-red-600" id="search-button">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="text-center text-gray-600 mb-8">
+                    <p>Popular Searches: <span class="font-semibold text-black">Leggings, Hoodies, Tank Tops, New Drops, Training</span></p>
+                </div>
+
+                <!-- Search Results -->
+                <div id="search-results-container">
+                    <h2 class="text-2xl font-bold mb-6" id="search-products-title">Products</h2>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-6 mb-12" id="search-product-results">
+                        <!-- Search products will be dynamically loaded here -->
+                    </div>
+
+                    <h2 class="text-2xl font-bold mb-6" id="search-articles-title">Articles</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8" id="search-article-results">
+                        <!-- Search articles will be dynamically loaded here -->
+                    </div>
+
+                    <p id="no-search-results" class="text-center text-gray-500 py-8 hidden">No results found for your search.</p>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Account Page (Sign In/Sign Up) -->
+    <div id="account" class="page-transition hidden-page pt-16"> <!-- Adjusted pt for moving bar -->
+        <section class="pt-16 pb-20 min-h-screen bg-black text-white flex items-center justify-center">
+            <div class="container mx-auto px-4 max-w-md">
+                <div class="bg-gray-900 p-8 rounded-xl shadow-lg text-center">
+                    <h1 class="text-3xl font-bold mb-8" id="account-title">SIGN IN</h1>
+                    
+                    <form id="signin-form" class="space-y-6">
+                        <div>
+                            <input type="email" placeholder="Email Address" class="w-full px-4 py-3 rounded-lg bg-gray-800 text-white border border-gray-700 focus:outline-none focus:ring-2 focus:ring-red-600" required>
+                        </div>
+                        <div>
+                            <input type="password" placeholder="Password" class="w-full px-4 py-3 rounded-lg bg-gray-800 text-white border border-gray-700 focus:outline-none focus:ring-2 focus:ring-red-600" required>
+                        </div>
+                        <button type="submit" class="w-full bg-red-600 text-white py-3 rounded-lg font-bold hover:bg-red-700 transition duration-300">
+                            SIGN IN
+                        </button>
+                        <a href="#" class="block text-sm text-gray-400 hover:underline mt-4">Forgot Password?</a>
+                    </form>
+
+                    <form id="signup-form" class="space-y-6 hidden">
+                        <div>
+                            <input type="text" placeholder="Full Name" class="w-full px-4 py-3 rounded-lg bg-gray-800 text-white border border-gray-700 focus:outline-none focus:ring-2 focus:ring-red-600" required>
+                        </div>
+                        <div>
+                            <input type="email" placeholder="Email Address" class="w-full px-4 py-3 rounded-lg bg-gray-800 text-white border border-gray-700 focus:outline-none focus:ring-2 focus:ring-red-600" required>
+                        </div>
+                        <div>
+                            <input type="password" placeholder="Password" class="w-full px-4 py-3 rounded-lg bg-gray-800 text-white border border-gray-700 focus:outline-none focus:ring-2 focus:ring-red-600" required>
+                        </div>
+                        <div>
+                            <input type="password" placeholder="Confirm Password" class="w-full px-4 py-3 rounded-lg bg-gray-800 text-white border border-gray-700 focus:outline-none focus:ring-2 focus:ring-red-600" required>
+                        </div>
+                        <button type="submit" class="w-full bg-red-600 text-white py-3 rounded-lg font-bold hover:bg-red-700 transition duration-300">
+                            SIGN UP
+                        </button>
+                    </form>
+
+                    <p class="mt-6 text-gray-400">
+                        <span id="toggle-text">Don't have an account?</span> 
+                        <button id="toggle-account-mode" class="text-red-600 hover:underline font-bold">Sign Up</button>
+                    </p>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Product Detail Page -->
+    <div id="product-detail" class="page-transition hidden-page pt-16">
+        <section class="pt-16 pb-20 min-h-screen bg-white">
+            <div class="container mx-auto px-4">
+                <button class="text-gray-600 hover:text-red-600 mb-8 flex items-center" onclick="showPage('shop')">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
+                    </svg>
+                    Back to Shop
+                </button>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
+                    <!-- Product Image Gallery -->
+                    <div class="flex flex-col items-center">
+                        <img id="product-detail-main-img" src="https://placehold.co/800x1000" alt="Product Main Image" class="w-full max-w-lg rounded-lg shadow-lg mb-4">
+                        <div id="product-detail-thumbnail-gallery" class="flex space-x-2 overflow-x-auto pb-2">
+                            <!-- Thumbnails will be loaded here -->
+                        </div>
+                    </div>
+
+                    <!-- Product Details -->
+                    <div>
+                        <h1 id="product-detail-name" class="text-4xl font-bold mb-2">Product Name</h1>
+                        <p id="product-detail-category" class="text-gray-600 text-lg mb-4">Category</p>
+                        <p id="product-detail-price" class="text-red-600 text-3xl font-bold mb-6">€0.00</p>
+                        
+                        <p id="product-detail-description" class="text-gray-700 leading-relaxed mb-8">
+                            Detailed description of the product goes here. This will include information about the material, fit, features, and benefits.
+                        </p>
+
+                        <!-- Availability -->
+                        <div class="mb-6">
+                            <span id="product-detail-availability" class="font-bold text-lg">Availability: <span class="text-green-600">In Stock</span></span>
+                        </div>
+
+                        <!-- Color Options -->
+                        <div class="mb-6" id="product-detail-colors-section">
+                            <h3 class="font-bold text-lg mb-2">Color: <span id="selected-color-name"></span></h3>
+                            <div id="product-detail-colors" class="flex flex-wrap gap-3">
+                                <!-- Color options will be loaded here -->
+                            </div>
+                        </div>
+
+                        <!-- Size Options -->
+                        <div class="mb-8" id="product-detail-sizes-section">
+                            <h3 class="font-bold text-lg mb-2">Size: <span id="selected-size-name"></span></h3>
+                            <div id="product-detail-sizes" class="flex flex-wrap gap-2">
+                                <!-- Size options will be loaded here -->
+                            </div>
+                        </div>
+
+                        <!-- Quantity and Add to Cart -->
+                        <div class="flex items-center space-x-4 mb-8">
+                            <div class="flex items-center border border-gray-300 rounded-lg">
+                                <button class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-l-lg" onclick="updateQuantity(-1)">-</button>
+                                <span id="product-quantity" class="px-4 py-2">1</span>
+                                <button class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-r-lg" onclick="updateQuantity(1)">+</button>
+                            </div>
+                            <button id="add-to-cart-detail-btn" class="flex-grow bg-black text-white py-3 rounded-lg font-bold hover:bg-red-600 transition duration-300">
+                                ADD TO CART
+                            </button>
+                        </div>
+
+                        <!-- Product Features/Bullet Points -->
+                        <div class="mb-8">
+                            <h3 class="font-bold text-lg mb-2">Features:</h3>
+                            <ul id="product-detail-features" class="list-disc list-inside text-gray-700 space-y-1">
+                                <!-- Features will be loaded here -->
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Similar Products -->
+                <div class="mt-20">
+                    <h2 class="text-3xl md:text-4xl font-bold mb-8 text-center">SIMILAR PRODUCTS</h2>
+                    <div id="similar-products-grid" class="grid grid-cols-2 md:grid-cols-4 gap-6">
+                        <!-- Similar products will be dynamically loaded here -->
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-black text-white py-12">
+        <div class="container mx-auto px-4 grid grid-cols-1 md:grid-cols-4 gap-8">
+            <div>
+                <h3 class="text-2xl font-bold text-white mb-4">FIERRO<span class="text-red-600">FIT</span></h3>
+                <p class="text-gray-400 text-sm">Premium Italian Gym Wear. Forge Your Legacy.</p>
+                <div class="flex space-x-4 mt-4">
+                    <a href="#" class="text-gray-400 hover:text-red-600 transition duration-300">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.779 1.673 4.927 4.927.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.85-.148 3.252-1.673 4.779-4.927 4.927-1.264.058-1.644.069-4.85.069-3.204 0-3.584-.012-4.85-.069-3.252-.148-4.779-1.673-4.927-4.927-.058-1.265-.069-1.645-.069-4.849 0-3.205.012-3.584.069-4.85.148-3.252 1.673-4.779 4.927-4.927 1.264-.057 1.644-.069 4.85-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.073 4.948.073 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.689-.073-4.948-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4s1.791-4 4-4 4 1.79 4 4-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+                    </a>
+                    <a href="#" class="text-gray-400 hover:text-red-600 transition duration-300">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="currentColor" viewBox="0 0 24 24"><path d="M9 8h-3v4h3v12h5v-12h3.642l.358-4h-4v-1.667c0-.955.192-1.333 1.588-1.333h2.412v-5h-3.5c-4.027 0-5 2.365-5 6.567v2.433z"/></svg>
+                    </a>
+                    <a href="#" class="text-gray-400 hover:text-red-600 transition duration-300">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="currentColor" viewBox="0 0 24 24"><path d="M24 4.557c-.883.392-1.832.656-2.828.775 1.017-.609 1.798-1.574 2.165-2.724-.951.564-2.005.974-3.127 1.195-.897-.957-2.178-1.555-3.594-1.555-3.403 0-6.162 2.759-6.162 6.162 0 .483.055.953.15 1.404-5.13-.258-9.668-2.724-12.757-6.468-.528.907-.833 1.97-.833 3.109 0 2.144 1.089 4.049 2.75 5.159-.959-.031-1.85-.297-2.631-.729v.079c0 2.98 2.127 5.472 4.923 6.04-.518.142-1.063.229-1.62.229-.398 0-.78-.038-1.153-.11.777 2.43 3.02 4.21 5.681 4.269-2.094 1.64-4.74 2.62-7.61 2.62-.495 0-.98-.029-1.458-.085 2.987 1.905 6.504 3.015 10.287 3.015 12.36 0 19.14-10.296 19.14-19.14 0-.292-.006-.58-.019-.868.839-.605 1.569-1.364 2.14-2.228z"/></svg>
+                    </a>
+                </div>
+            </div>
+            
+            <div>
+                <h3 class="font-bold text-lg mb-4">SHOP</h3>
+                <ul class="space-y-2 text-gray-400 text-sm">
+                    <li><a href="#" class="hover:text-red-600 transition duration-300" onclick="showPage('shop'); filterShopByCategory('All');">All Products</a></li>
+                    <li><a href="#" class="hover:text-red-600 transition duration-300" onclick="showPage('shop'); filterShopByCategory('Men\'s');">Men's</a></li>
+                    <li><a href="#" class="hover:text-red-600 transition duration-300" onclick="showPage('shop'); filterShopByCategory('Women\'s');">Women's</a></li>
+                    <li><a href="#" class="hover:text-red-600 transition duration-300" onclick="showPage('new-drops')">New Arrivals</a></li>
+                    <li><a href="#" class="hover:text-red-600 transition duration-300" onclick="showPage('shop')">Sale</a></li>
+                </ul>
+            </div>
+            
+            <div>
+                <h3 class="font-bold text-lg mb-4">CUSTOMER SERVICE</h3>
+                <ul class="space-y-2 text-gray-400 text-sm">
+                    <li><a href="#" class="hover:text-red-600 transition duration-300">Contact Us</a></li>
+                    <li><a href="#" class="hover:text-red-600 transition duration-300">Shipping & Returns</a></li>
+                    <li><a href="#" class="hover:text-red-600 transition duration-300">FAQ</a></li>
+                    <li><a href="#" class="hover:text-red-600 transition duration-300">Size Guide</a></li>
+                    <li><a href="#" class="hover:text-red-600 transition duration-300">Privacy Policy</a></li>
+                </ul>
+            </div>
+            
+            <div>
+                <h3 class="font-bold text-lg mb-4">FIERROFIT</h3>
+                <ul class="space-y-2 text-gray-400 text-sm">
+                    <li><a href="#" class="hover:text-red-600 transition duration-300" onclick="showPage('about')">About Us</a></li>
+                    <li><a href="#" class="hover:text-red-600 transition duration-300" onclick="showPage('articles')">Articles & Blog</a></li>
+                    <li><a href="#" class="hover:text-red-600 transition duration-300">Careers</a></li>
+                    <li><a href="#" class="hover:text-red-600 transition duration-300">Affiliates</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="container mx-auto px-4 text-center text-gray-500 text-sm mt-12">
+            &copy; 2026 FierroFit. All rights reserved. Designed with passion in Agrigento.
+        </div>
+    </footer>
+
+    <!-- Discount Modal -->
+    <div id="discount-modal" class="modal flex">
+        <div class="modal-content">
+            <span class="close-button" onclick="closeModal()">&times;</span>
+            <img src="Megaphone-4.png" alt="Discount Icon" class="mx-auto mb-6 rounded-full">
+            <h2 class="text-4xl font-bold text-red-600 mb-4">MASSIVE DISCOUNT!</h2>
+            <p class="text-xl mb-6">Purchase <span class="font-bold">2 or more items</span> and get <span class="font-bold text-red-600">20% OFF</span> your entire order!</p>
+            <button class="bg-red-600 hover:bg-red-700 text-white px-8 py-3 rounded-full font-bold transition duration-300 transform hover:scale-105" onclick="closeModal(); showPage('shop');">
+                SHOP NOW
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // --- Dummy Data (Simulate Database) ---
+        const allProducts = [
+            { 
+                id: 1, 
+                name: 'FIERRO Logo Tank', 
+                price: 39.90, 
+                category: 'Tops', 
+                subCategory: 'Men\'s', 
+                color: 'Black/Red', 
+                img: 'Untitled-7.png', 
+                images: ['Untitled-7.png', 'BACK.png', 'https://placehold.co/800x1000/000000/FF0000?text=Tank+Detail'],
+                description: 'The FIERRO Logo Tank is designed for peak performance and ultimate comfort. Made from a breathable, moisture-wicking fabric blend, it keeps you cool and dry during intense workouts. The iconic FIERRO logo is embroidered on the chest, showcasing your dedication to the movement. Perfect for gym sessions or casual wear.',
+                features: ['Moisture-wicking fabric', 'Breathable and lightweight', 'Athletic fit', 'Durable construction', 'Embroidered logo'],
+                sizes: { 'S': 0, 'M': 0, 'L': 0, 'XL': 0, 'XXL': 0 }, // quantity available
+                colors: [{ name: 'Black/Red', hex: '#000000', img: 'Untitled-8.png' }, { name: 'White/Black', hex: '#FFFFFF', img: 'Untitled-8.png' }],
+                new: true, 
+                bestseller: false 
+            },
+            { 
+                id: 2, 
+                name: 'Performance Shorts', 
+                price: 49.90, 
+                category: 'Bottoms', 
+                subCategory: 'Men\'s', 
+                color: 'White/Red', 
+                img: 'https://placehold.co/600x800', 
+                images: ['https://placehold.co/800x1000/FFFFFF/FF0000?text=Shorts+Front', 'https://placehold.co/800x1000/FFFFFF/FF0000?text=Shorts+Side', 'https://placehold.co/800x1000/FFFFFF/FF0000?text=Shorts+Detail'],
+                description: 'Unleash your full potential with our Performance Shorts. Crafted from a lightweight, stretchable fabric, these shorts offer unrestricted movement for squats, sprints, and everything in between. Featuring a secure waistband and strategic ventilation zones.',
+                features: ['4-way stretch fabric', 'Quick-dry technology', 'Elastic waistband with drawstring', 'Side pockets', 'Ventilated design'],
+                sizes: { 'S': 3, 'M': 7, 'L': 5, 'XL': 2, 'XXL': 1 },
+                colors: [{ name: 'White/Red', hex: '#FFFFFF', img: 'https://placehold.co/600x800/FFFFFF/FF0000?text=White/Red' }, { name: 'Black/White', hex: '#000000', img: 'https://placehold.co/600x800/000000/FFFFFF?text=Black/White' }],
+                new: true, 
+                bestseller: false 
+            },
+            { 
+                id: 3, 
+                name: 'Training Leggings', 
+                price: 59.90, 
+                category: 'Bottoms', 
+                subCategory: 'Women\'s', 
+                color: 'Black Camo', 
+                img: 'https://placehold.co/600x800', 
+                images: ['https://placehold.co/800x1000/333333/666666?text=Leggings+Front', 'https://placehold.co/800x1000/333333/666666?text=Leggings+Side', 'https://placehold.co/800x1000/333333/666666?text=Leggings+Pattern'],
+                description: 'Experience unparalleled support and style with our Training Leggings. The compression fit enhances blood flow and reduces muscle fatigue, while the high-waisted design provides a flattering silhouette. Perfect for yoga, lifting, or running.',
+                features: ['High-compression fit', 'Squat-proof material', 'Breathable and flexible', 'Wide waistband for support', 'Hidden pocket'],
+                sizes: { 'XS': 2, 'S': 6, 'M': 12, 'L': 9, 'XL': 4 },
+                colors: [{ name: 'Black Camo', hex: '#333333', img: 'https://placehold.co/600x800/333333/666666?text=Black+Camo' }, { name: 'Grey', hex: '#808080', img: 'https://placehold.co/600x800/808080/FFFFFF?text=Grey' }],
+                new: false, 
+                bestseller: false 
+            },
+            { 
+                id: 4, 
+                name: 'Oversize Hoodie', 
+                price: 69.90, 
+                category: 'Hoodies & Jackets', 
+                subCategory: 'Men\'s', 
+                color: 'Red/Black', 
+                img: 'https://placehold.co/600x800', 
+                images: ['https://placehold.co/800x1000/FF0000/000000?text=Hoodie+Front', 'https://placehold.co/800x1000/FF0000/000000?text=Hoodie+Back', 'https://placehold.co/800x1000/FF0000/000000?text=Hoodie+Detail'],
+                description: 'Stay warm and stylish with the FierroFit Oversize Hoodie. Made from a soft, heavy-weight cotton blend, it offers maximum comfort for your post-workout cool-down or casual days. The oversized fit provides a relaxed, modern look.',
+                features: ['Premium cotton blend', 'Soft fleece lining', 'Adjustable drawstring hood', 'Kangaroo pocket', 'Ribbed cuffs and hem'],
+                sizes: { 'S': 4, 'M': 9, 'L': 7, 'XL': 5, 'XXL': 2 },
+                colors: [{ name: 'Red/Black', hex: '#FF0000', img: 'https://placehold.co/600x800/FF0000/000000?text=Red/Black' }, { name: 'Black/White', hex: '#000000', img: 'https://placehold.co/600x800/000000/FFFFFF?text=Black/White' }],
+                new: true, 
+                bestseller: false 
+            },
+            { id: 5, name: 'FIERRO Logo Tee', price: 34.90, category: 'Tops', subCategory: 'Men\'s', color: 'Black/Red', img: 'Untitled-7.png', images: ['Untitled-7.png'], description: 'Classic logo tee for everyday wear.', features: ['Soft cotton', 'Regular fit'], sizes: { 'S': 10, 'M': 15, 'L': 12, 'XL': 8 }, colors: [{ name: 'Black/Red', hex: '#000000' }], new: false, bestseller: false },
+            { id: 6, name: 'Mesh Training Tank', price: 44.90, category: 'Tops', subCategory: 'Men\'s', color: 'Black', img: 'https://placehold.co/600x800', images: ['https://placehold.co/800x1000'], description: 'Lightweight mesh tank for maximum ventilation.', features: ['Mesh panels', 'Quick-dry'], sizes: { 'S': 7, 'M': 11, 'L': 6, 'XL': 3 }, colors: [{ name: 'Black', hex: '#000000' }], new: false, bestseller: true },
+            { id: 7, name: 'Training Leggings', price: 59.90, category: 'Bottoms', subCategory: 'Women\'s', color: 'Black', img: 'https://placehold.co/600x800', images: ['https://placehold.co/800x1000'], description: 'High-performance leggings for all workouts.', features: ['Compression', 'High-waisted'], sizes: { 'XS': 5, 'S': 10, 'M': 8, 'L': 4 }, colors: [{ name: 'Black', hex: '#000000' }], new: false, bestseller: false },
+            { id: 8, name: 'Oversize Hoodie', price: 69.90, category: 'Hoodies & Jackets', subCategory: 'Women\'s', color: 'Red', img: 'https://placehold.co/600x800', images: ['https://placehold.co/800x1000'], description: 'Cozy and stylish oversized hoodie for women.', features: ['Soft fleece', 'Relaxed fit'], sizes: { 'S': 6, 'M': 10, 'L': 7, 'XL': 3 }, colors: [{ name: 'Red', hex: '#FF0000' }], new: false, bestseller: false },
+            { id: 9, name: 'Joggers', price: 54.90, category: 'Bottoms', subCategory: 'Men\'s', color: 'Black', img: 'https://placehold.co/600x800', images: ['https://placehold.co/800x1000'], description: 'Versatile joggers for training or lounging.', features: ['Tapered fit', 'Elastic cuffs'], sizes: { 'S': 8, 'M': 13, 'L': 10, 'XL': 6 }, colors: [{ name: 'Black', hex: '#000000' }], new: false, bestseller: false },
+            { id: 10, name: 'Sports Bra', price: 39.90, category: 'Tops', subCategory: 'Women\'s', color: 'White/Red', img: 'https://placehold.co/600x800', images: ['https://placehold.co/800x1000'], description: 'Supportive sports bra for medium-impact activities.', features: ['Medium support', 'Removable pads'], sizes: { 'XS': 4, 'S': 9, 'M': 7, 'L': 3 }, colors: [{ name: 'White/Red', hex: '#FFFFFF' }], new: false, bestseller: false },
+            { id: 11, name: 'Training Shorts', price: 49.90, category: 'Bottoms', subCategory: 'Men\'s', color: 'Black', img: 'https://placehold.co/600x800', images: ['https://placehold.co/800x1000'], description: 'Lightweight training shorts with inner brief.', features: ['Inner brief', 'Zipper pockets'], sizes: { 'S': 6, 'M': 10, 'L': 8, 'XL': 4 }, colors: [{ name: 'Black', hex: '#000000' }], new: false, bestseller: false },
+            { id: 12, name: 'Windbreaker', price: 79.90, category: 'Hoodies & Jackets', subCategory: 'Men\'s', color: 'Black/Red', img: 'https://placehold.co/600x800', images: ['https://placehold.co/800x1000'], description: 'Lightweight windbreaker for outdoor training.', features: ['Water-resistant', 'Packable hood'], sizes: { 'S': 3, 'M': 7, 'L': 5, 'XL': 2 }, colors: [{ name: 'Black/Red', hex: '#000000' }], new: false, bestseller: false },
+            { id: 13, name: 'Compression Leggings', price: 64.90, category: 'Bottoms', subCategory: 'Women\'s', color: 'Black', img: 'https://placehold.co/600x800', images: ['https://placehold.co/800x1000'], description: 'Advanced compression leggings for enhanced recovery.', features: ['Graduated compression', 'Flatlock seams'], sizes: { 'XS': 3, 'S': 8, 'M': 10, 'L': 6 }, colors: [{ name: 'Black', hex: '#000000' }], new: false, bestseller: false },
+            { 
+                id: 14, 
+                name: 'Thermal Hoodie', 
+                price: 79.90, 
+                category: 'Hoodies & Jackets', 
+                subCategory: 'Men\'s', 
+                color: 'Black', 
+                img: 'https://placehold.co/800x1000', 
+                images: ['https://placehold.co/800x1000/000000/FFFFFF?text=Thermal+Hoodie+Front', 'https://placehold.co/800x1000/000000/FFFFFF?text=Thermal+Hoodie+Back'],
+                description: 'Our Thermal Hoodie is engineered for cold weather training with premium Italian fabrics and thermal insulation technology. Stay warm without sacrificing mobility.',
+                features: ['Thermal insulation', 'Soft-touch fabric', 'Adjustable hood', 'Front pouch pocket'],
+                sizes: { 'S': 5, 'M': 10, 'L': 8, 'XL': 3 },
+                colors: [{ name: 'Black', hex: '#000000', img: 'https://placehold.co/800x1000/000000/FFFFFF?text=Thermal+Hoodie+Black' }, { name: 'Grey', hex: '#808080', img: 'https://placehold.co/800x1000/808080/FFFFFF?text=Thermal+Hoodie+Grey' }],
+                new: true, 
+                bestseller: false 
+            },
+            { 
+                id: 15, 
+                name: 'Thermal Joggers', 
+                price: 64.90, 
+                category: 'Bottoms', 
+                subCategory: 'Men\'s', 
+                color: 'Black', 
+                img: 'https://placehold.co/800x1000', 
+                images: ['https://placehold.co/800x1000/000000/FFFFFF?text=Thermal+Joggers+Front', 'https://placehold.co/800x1000/000000/FFFFFF?text=Thermal+Joggers+Side'],
+                description: 'Pair your Thermal Hoodie with these matching joggers for complete cold-weather comfort. Designed with a tapered fit and fleece lining, they provide warmth and style.',
+                features: ['Fleece lined', 'Tapered fit', 'Elastic waistband', 'Zippered pockets'],
+                sizes: { 'S': 4, 'M': 9, 'L': 7, 'XL': 5 },
+                colors: [{ name: 'Black', hex: '#000000', img: 'https://placehold.co/800x1000/000000/FFFFFF?text=Thermal+Joggers+Black' }, { name: 'Grey', hex: '#808080', img: 'https://placehold.co/800x1000/808080/FFFFFF?text=Thermal+Joggers+Grey' }],
+                new: true, 
+                bestseller: false 
+            },
+            { 
+                id: 16, 
+                name: 'Compression Top', 
+                price: 49.90, 
+                category: 'Tops', 
+                subCategory: 'Women\'s', 
+                color: 'Red', 
+                img: 'https://placehold.co/800x1000', 
+                images: ['https://placehold.co/800x1000/FF0000/FFFFFF?text=Compression+Top+Front', 'https://placehold.co/800x1000/FF0000/FFFFFF?text=Compression+Top+Back'],
+                description: 'This long-sleeve compression top offers superior muscle support and temperature regulation. Ideal as a base layer or worn on its own for intense training sessions.',
+                features: ['Muscle compression', 'Moisture-wicking', 'Flatlock seams', 'Breathable fabric'],
+                sizes: { 'XS': 3, 'S': 8, 'M': 10, 'L': 6 },
+                colors: [{ name: 'Red', hex: '#FF0000', img: 'https://placehold.co/800x1000/FF0000/FFFFFF?text=Compression+Top+Red' }, { name: 'Black', hex: '#000000', img: 'https://placehold.co/800x1000/000000/FFFFFF?text=Compression+Top+Black' }],
+                new: true, 
+                bestseller: false 
+            },
+            { id: 17, name: 'Gym Bag', price: 29.90, category: 'Accessories', subCategory: 'Accessories', color: 'Black', img: 'https://placehold.co/600x800', images: ['https://placehold.co/800x1000'], description: 'Durable and spacious gym bag for all your essentials.', features: ['Water-resistant', 'Multiple compartments'], sizes: { 'ONE SIZE': 20 }, colors: [{ name: 'Black', hex: '#000000' }], new: false, bestseller: false },
+            { id: 18, name: 'Water Bottle', price: 14.90, category: 'Accessories', subCategory: 'Accessories', color: 'Red', img: 'https://placehold.co/600x800', images: ['https://placehold.co/800x1000'], description: 'Stay hydrated with our stylish and durable water bottle.', features: ['BPA-free', 'Leak-proof lid'], sizes: { 'ONE SIZE': 30 }, colors: [{ name: 'Red', hex: '#FF0000' }, { name: 'Black', hex: '#000000' }], new: false, bestseller: false },
+        ];
+
+        const allArticles = [
+            { id: 1, title: 'The Science of Progressive Overload', snippet: 'Learn how to continuously challenge your muscles for maximum growth.', img: 'https://placehold.co/800x500', category: 'Training' },
+            { id: 2, title: 'Fueling Your Gains: Nutrition for Athletes', snippet: 'Essential dietary tips to optimize your performance and recovery.', img: 'https://placehold.co/800x500', category: 'Nutrition' },
+            { id: 3, title: 'Mind-Muscle Connection: Train Smarter', snippet: 'Unlock your full potential by mastering the connection between your mind and muscles.', img: 'https://placehold.co/800x500', category: 'Training' },
+            { id: 4, title: 'Home Gym Essentials: Build Your Sanctuary', snippet: 'A guide to setting up an effective home gym, no matter your space.', img: 'https://placehold.co/800x500', category: 'Lifestyle' },
+            { id: 5, title: 'Cardio for Gains: The Right Approach', snippet: 'How to incorporate cardio into your routine without sacrificing muscle mass.', img: 'https://placehold.co/800x500', category: 'Training' },
+            { id: 6, title: 'Recovery Hacks: Optimize Your Rest', snippet: 'Tips and tricks to speed up recovery and prevent overtraining.', img: 'https://placehold.co/800x500', category: 'Recovery' },
+            { id: 7, title: 'Italian Fitness Culture: Beyond the Gym', snippet: 'Explore the unique blend of style and strength in Italian fitness.', img: 'https://placehold.co/800x500', category: 'Lifestyle' },
+            { id: 8, title: 'Choosing the Right Gym Apparel', snippet: 'A guide to selecting gear that enhances performance and comfort.', img: 'https://placehold.co/800x500', category: 'Products' },
+        ];
+
+        let cart = []; // Global cart array to store items
+        let selectedProduct = null; // Stores the currently viewed product on the detail page
+        let selectedSize = null;
+        let selectedColor = null;
+        let productQuantity = 1;
+
+        // --- Global Page Navigation Logic ---
+        function showPage(pageId) {
+            const pages = document.querySelectorAll('.page-transition');
+            pages.forEach(page => {
+                page.classList.remove('active-page');
+                page.classList.add('hidden-page');
+            });
+            document.getElementById(pageId).classList.remove('hidden-page');
+            document.getElementById(pageId).classList.add('active-page');
+            window.scrollTo(0, 0); // Scroll to top when changing page
+
+            // Specific actions for certain pages
+            if (pageId === 'shop') {
+                renderShopProducts(); // Re-render products when navigating to shop
+            } else if (pageId === 'articles') {
+                renderArticles(); // Re-render articles when navigating to articles
+            } else if (pageId === 'search') {
+                document.getElementById('search-input').value = ''; // Clear search input
+                document.getElementById('search-product-results').innerHTML = ''; // Clear previous results
+                document.getElementById('search-article-results').innerHTML = '';
+                document.getElementById('no-search-results').classList.add('hidden');
+                document.getElementById('search-products-title').classList.remove('hidden');
+                document.getElementById('search-articles-title').classList.remove('hidden');
+            } else if (pageId === 'cart') {
+                renderCartItems(); // Render cart items when navigating to cart page
+            }
+        }
+
+        // --- Mobile Menu Toggle ---
+        const menuToggle = document.getElementById('menu-toggle');
+        const mobileMenu = document.getElementById('mobile-menu');
+
+        function toggleMenu() {
+            mobileMenu.classList.toggle('hidden');
+        }
+        menuToggle.addEventListener('click', toggleMenu);
+
+        // --- Cart Functionality ---
+        function addToCart(productName, price, size = 'N/A', color = 'N/A') {
+            // For the main cart, we'll store the selected size and color from the detail page
+            // If adding from a product card, default to N/A or a common size/color
+            const itemToAdd = { 
+                name: productName, 
+                price: price, 
+                quantity: productQuantity, // Use the quantity from the detail page
+                img: 'Untitled-7.png', // Generic image for cart display
+                size: size,
+                color: color
+            };
+
+            const existingItemIndex = cart.findIndex(item => 
+                item.name === itemToAdd.name && item.size === itemToAdd.size && item.color === itemToAdd.color
+            );
+
+            if (existingItemIndex > -1) {
+                cart[existingItemIndex].quantity += itemToAdd.quantity;
+            } else {
+                cart.push(itemToAdd);
+            }
+            alert(`${itemToAdd.quantity} x ${itemToAdd.name} (${itemToAdd.size}, ${itemToAdd.color}) added to cart!`);
+            renderCartItems(); // Re-render cart items to reflect changes
+            
+            // Reset quantity for next product view
+            productQuantity = 1; 
+            document.getElementById('product-quantity').textContent = productQuantity;
+        }
+
+        function renderCartItems() {
+            const cartItemsContainer = document.getElementById('cart-items-container');
+            cartItemsContainer.innerHTML = ''; // Clear existing items
+
+            if (cart.length === 0) {
+                cartItemsContainer.innerHTML = '<p id="empty-cart-message" class="text-center text-gray-500 py-8">Your cart is empty.</p>';
+            } else {
+                cart.forEach((item, index) => {
+                    const cartItemHtml = `
+                        <div class="flex items-center justify-between border-b border-gray-200 py-4" data-index="${index}">
+                            <div class="flex items-center space-x-4">
+                                <img src="${item.img}" alt="${item.name}" class="w-20 h-20 object-cover rounded-lg">
+                                <div>
+                                    <h3 class="font-bold text-lg">${item.name}</h3>
+                                    <p class="text-gray-600 text-sm">Size: ${item.size}, Color: ${item.color}</p>
+                                    <p class="font-bold text-black mt-1">€${item.price.toFixed(2)}</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center space-x-4">
+                                <div class="flex items-center border border-gray-300 rounded-lg">
+                                    <button class="px-3 py-1 text-gray-600 hover:bg-gray-100 rounded-l-lg" onclick="updateCartQuantity(${index}, -1)">-</button>
+                                    <span class="px-3 py-1">${item.quantity}</span>
+                                    <button class="px-3 py-1 text-gray-600 hover:bg-gray-100 rounded-r-lg" onclick="updateCartQuantity(${index}, 1)">+</button>
+                                </div>
+                                <button class="text-red-600 hover:text-red-800" onclick="removeCartItem(${index})">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1H9a1 1 0 00-1 1v3M4 7h16" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                    cartItemsContainer.innerHTML += cartItemHtml;
+                });
+            }
+            updateCartSummary();
+        }
+
+        function updateCartQuantity(index, change) {
+            if (cart[index]) {
+                cart[index].quantity += change;
+                if (cart[index].quantity < 1) {
+                    removeCartItem(index);
+                } else {
+                    renderCartItems(); // Re-render to show updated quantity
+                }
+            }
+        }
+
+        function removeCartItem(index) {
+            cart.splice(index, 1); // Remove item from array
+            renderCartItems(); // Re-render cart
+        }
+
+        function clearCart() {
+            cart = []; // Empty the cart array
+            renderCartItems(); // Re-render cart
+        }
+
+        let currentDiscount = 0; // Stores the applied discount amount
+
+        function updateCartSummary() {
+            let subtotal = 0;
+            let totalItems = 0;
+            cart.forEach(item => {
+                subtotal += item.price * item.quantity;
+                totalItems += item.quantity;
+            });
+
+            // Apply discount based on total items
+            if (totalItems >= 2) {
+                currentDiscount = subtotal * 0.20; // 20% discount
+            } else {
+                currentDiscount = 0;
+            }
+
+            // Apply coupon discount if any
+            const couponInput = document.getElementById('coupon-input');
+            const couponCode = couponInput.value.toUpperCase();
+            const couponMessage = document.getElementById('coupon-message');
+
+            if (couponCode === 'FIERRO25' && subtotal > 0) { // Example coupon code
+                const couponDiscount = subtotal * 0.25; // 25% coupon discount
+                currentDiscount = Math.max(currentDiscount, couponDiscount); // Take the higher discount
+                couponMessage.innerText = 'Coupon applied! 25% off.';
+                couponMessage.classList.remove('text-red-600');
+                couponMessage.classList.add('text-green-600');
+            } else if (couponCode !== '' && couponCode !== 'FIERRO25') {
+                couponMessage.innerText = 'Invalid coupon code.';
+                couponMessage.classList.remove('text-green-600');
+                couponMessage.classList.add('text-red-600');
+            } else if (couponCode === '' && couponMessage.innerText !== '') {
+                couponMessage.innerText = ''; // Clear message if coupon input is empty
+            }
+
+
+            const shipping = subtotal > 0 ? 7.50 : 0; // Example fixed shipping, free if cart empty
+            const taxRate = 0.22; // 22% Italian VAT
+            const taxableSubtotal = subtotal - currentDiscount;
+            const tax = taxableSubtotal > 0 ? taxableSubtotal * taxRate : 0;
+            const total = subtotal - currentDiscount + shipping + tax;
+
+            document.getElementById('cart-subtotal').innerText = `€${subtotal.toFixed(2)}`;
+            document.getElementById('cart-discount').innerText = `-€${currentDiscount.toFixed(2)}`;
+            document.getElementById('cart-shipping').innerText = `€${shipping.toFixed(2)}`;
+            document.getElementById('cart-tax').innerText = `€${tax.toFixed(2)}`;
+            document.getElementById('cart-total').innerText = `€${total.toFixed(2)}`;
+        }
+
+        function applyCoupon() {
+            updateCartSummary(); // Recalculate with potential coupon
+        }
+
+        // --- Account Page Toggle (Sign In / Sign Up) ---
+        const toggleAccountModeButton = document.getElementById('toggle-account-mode');
+        const accountTitle = document.getElementById('account-title');
+        const signInForm = document.getElementById('signin-form');
+        const signUpForm = document.getElementById('signup-form');
+        const toggleText = document.getElementById('toggle-text');
+
+        toggleAccountModeButton.addEventListener('click', (e) => {
+            e.preventDefault();
+            if (signInForm.classList.contains('hidden')) {
+                // Currently on Sign Up, switch to Sign In
+                accountTitle.innerText = 'SIGN IN';
+                signInForm.classList.remove('hidden');
+                signUpForm.classList.add('hidden');
+                toggleText.innerText = "Don't have an account?";
+                toggleAccountModeButton.innerText = "Sign Up";
+            } else {
+                // Currently on Sign In, switch to Sign Up
+                accountTitle.innerText = 'SIGN UP';
+                signInForm.classList.add('hidden');
+                signUpForm.classList.remove('hidden');
+                toggleText.innerText = "Already have an account?";
+                toggleAccountModeButton.innerText = "Sign In";
+            }
+        });
+
+        // --- 3D Background Animation (Three.js) ---
+        let scene, camera, renderer, particles;
+
+        function init3DBackground() {
+            const container = document.getElementById('canvas-container');
+
+            // Scene
+            scene = new THREE.Scene();
+
+            // Camera
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.z = 5;
+
+            // Renderer
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            container.appendChild(renderer.domElement);
+
+            // Particles
+            const particleCount = 1000;
+            const geometry = new THREE.BufferGeometry();
+            const positions = [];
+            const colors = [];
+            const color1 = new THREE.Color(0xffffff); // White
+            const color2 = new THREE.Color(0xe30613); // Red
+
+            for (let i = 0; i < particleCount; i++) {
+                const x = (Math.random() - 0.5) * 20;
+                const y = (Math.random() - 0.5) * 20;
+                const z = (Math.random() - 0.5) * 20;
+                positions.push(x, y, z);
+
+                // Randomly assign white or red color
+                const color = Math.random() > 0.5 ? color1 : color2;
+                colors.push(color.r, color.g, color.b);
+            }
+
+            geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+            geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+
+            const material = new THREE.PointsMaterial({
+                size: 0.05,
+                vertexColors: true,
+                transparent: true,
+                opacity: 0.7,
+                blending: THREE.AdditiveBlending
+            });
+
+            particles = new THREE.Points(geometry, material);
+            scene.add(particles);
+
+            // OrbitControls (optional, for debugging/interaction)
+            // const controls = new OrbitControls(camera, renderer.domElement);
+            // controls.enableDamping = true;
+            // controls.dampingFactor = 0.05;
+        }
+
+        function animate3DBackground() {
+            requestAnimationFrame(animate3DBackground);
+
+            if (particles) {
+                particles.rotation.x += 0.0005;
+                particles.rotation.y += 0.0008;
+            }
+
+            // if (controls) controls.update(); // Only if OrbitControls are enabled
+            renderer.render(scene, camera);
+        }
+
+        function onWindowResize3DBackground() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        window.addEventListener('resize', onWindowResize3DBackground);
+        init3DBackground();
+        animate3DBackground();
+
+        // --- Testimonial Auto-Scroll Loop ---
+        const testimonialTrack = document.getElementById('testimonial-track');
+        let testimonialScrollInterval;
+        const testimonialScrollSpeed = 50; // milliseconds per scroll step
+        const testimonialScrollAmount = 1; // pixels per scroll step
+
+        function startAutoScroll() {
+            // Clear any existing clones to prevent duplicates on re-render
+            const originalTestimonials = Array.from(testimonialTrack.children).filter((_, index) => index < 3); // Assuming 3 original testimonials
+            testimonialTrack.innerHTML = ''; // Clear track
+            originalTestimonials.forEach(testimonial => testimonialTrack.appendChild(testimonial)); // Re-add originals
+
+            // Duplicate testimonials to create a seamless loop
+            const testimonials = Array.from(testimonialTrack.children);
+            testimonials.forEach(testimonial => {
+                const clone = testimonial.cloneNode(true);
+                testimonialTrack.appendChild(clone);
+            });
+
+            let currentScroll = 0;
+            // Calculate the width of one full set of original testimonials
+            // This needs to be dynamic based on actual rendered width
+            let singleSetWidth = 0;
+            if (testimonials.length > 0) {
+                singleSetWidth = testimonials[0].offsetWidth * testimonials.length + (testimonials.length - 1) * 16; // 16px for space-x-4
+            }
+            
+            // Adjust track width to accommodate clones for smooth looping
+            testimonialTrack.style.width = `${singleSetWidth * 2}px`; // Original + one clone set
+
+            clearInterval(testimonialScrollInterval); // Clear any previous interval
+            testimonialScrollInterval = setInterval(() => {
+                currentScroll += testimonialScrollAmount;
+                // If we've scrolled past the original set, reset to the beginning of the cloned set
+                if (currentScroll >= singleSetWidth) {
+                    currentScroll = 0; 
+                }
+                testimonialTrack.style.transform = `translateX(-${currentScroll}px)`;
+            }, testimonialScrollSpeed);
+        }
+
+        // Stop auto-scroll on hover (optional)
+        testimonialTrack.addEventListener('mouseenter', () => clearInterval(testimonialScrollInterval));
+        testimonialTrack.addEventListener('mouseleave', startAutoScroll);
+
+        // --- Shop Page Filtering and Pagination ---
+        const productGrid = document.getElementById('product-grid');
+        const priceRange = document.getElementById('price-range');
+        const priceRangeValue = document.getElementById('price-range-value');
+        const categoryFilters = document.querySelectorAll('.category-filter');
+        const applyFiltersBtn = document.getElementById('apply-filters-btn');
+        const sortBySelect = document.getElementById('sort-by');
+
+        const productsPerPage = 9;
+        let currentPage = 1;
+        let filteredProducts = [...allProducts]; // Start with all products
+
+        function renderShopProducts() {
+            productGrid.innerHTML = ''; // Clear current products
+
+            // Apply filters
+            let currentFiltered = [...allProducts];
+
+            // Category Filter
+            const selectedCategories = Array.from(categoryFilters)
+                                            .filter(checkbox => checkbox.checked)
+                                            .map(checkbox => checkbox.value);
+            
+            if (selectedCategories.length > 0) {
+                currentFiltered = currentFiltered.filter(product => 
+                    selectedCategories.includes(product.category) || selectedCategories.includes(product.subCategory)
+                );
+            }
+
+            // Price Filter
+            const maxPrice = parseInt(priceRange.value);
+            currentFiltered = currentFiltered.filter(product => product.price <= maxPrice);
+
+            // Sort By
+            const sortBy = sortBySelect.value;
+            if (sortBy === 'newest') {
+                currentFiltered.sort((a, b) => (b.new ? 1 : 0) - (a.new ? 1 : 0)); // Simple sort for 'new' flag
+            } else if (sortBy === 'price-asc') {
+                currentFiltered.sort((a, b) => a.price - b.price);
+            } else if (sortBy === 'price-desc') {
+                currentFiltered.sort((a, b) => b.price - a.price);
+            }
+            // 'featured' implies no specific sort, just default order
+
+            filteredProducts = currentFiltered; // Update global filtered products for pagination
+
+            // Pagination
+            const totalPages = Math.ceil(filteredProducts.length / productsPerPage);
+            const startIndex = (currentPage - 1) * productsPerPage;
+            const endIndex = startIndex + productsPerPage;
+            const productsToDisplay = filteredProducts.slice(startIndex, endIndex);
+
+            if (productsToDisplay.length === 0 && filteredProducts.length > 0 && currentPage > 1) {
+                // If no products on current page but there are products, go back to previous page
+                currentPage = totalPages;
+                renderShopProducts();
+                return;
+            } else if (productsToDisplay.length === 0 && filteredProducts.length === 0) {
+                productGrid.innerHTML = '<p class="text-center text-gray-500 col-span-full py-8">No products match your filters.</p>';
+            }
+
+
+            productsToDisplay.forEach(product => {
+                const productCard = `
+                    <div class="product-card bg-white rounded-xl overflow-hidden shadow-md transition duration-300 cursor-pointer" onclick="showProductDetail(${product.id})">
+                        <div class="relative">
+                            <img src="${product.img}" alt="${product.name}" class="w-full h-64 object-cover">
+                            ${product.new ? '<span class="absolute top-4 right-4 bg-red-600 text-white text-xs px-2 py-1 rounded">NEW</span>' : ''}
+                            ${product.bestseller ? '<span class="absolute top-4 right-4 bg-red-600 text-white text-xs px-2 py-1 rounded">BESTSELLER</span>' : ''}
+                        </div>
+                        <div class="p-4">
+                            <h3 class="font-bold text-lg mb-1">${product.name}</h3>
+                            <p class="text-gray-600 mb-2">${product.color}</p>
+                            <p class="font-bold text-black">€${product.price.toFixed(2)}</p>
+                            <button class="mt-3 w-full bg-black text-white py-2 rounded-lg hover:bg-red-600 transition duration-300" onclick="event.stopPropagation(); addToCart('${product.name}', ${product.price})">
+                                ADD TO CART
+                            </button>
+                        </div>
+                    </div>
+                `;
+                productGrid.innerHTML += productCard;
+            });
+
+            renderShopPagination(totalPages);
+        }
+
+        function renderShopPagination(totalPages) {
+            const paginationNumbersContainer = document.getElementById('pagination-numbers');
+            paginationNumbersContainer.innerHTML = '';
+
+            document.getElementById('prev-page-btn').disabled = currentPage === 1;
+            document.getElementById('next-page-btn').disabled = currentPage === totalPages || totalPages === 0;
+
+            for (let i = 1; i <= totalPages; i++) {
+                const pageButton = document.createElement('button');
+                pageButton.classList.add('px-4', 'py-1', 'rounded-lg', 'border', 'border-gray-300', 'hover:bg-gray-100');
+                if (i === currentPage) {
+                    pageButton.classList.add('bg-black', 'text-white');
+                    pageButton.classList.remove('border-gray-300', 'hover:bg-gray-100');
+                } else {
+                    pageButton.classList.add('text-gray-900');
+                }
+                pageButton.innerText = i;
+                pageButton.addEventListener('click', () => {
+                    currentPage = i;
+                    renderShopProducts();
+                });
+                paginationNumbersContainer.appendChild(pageButton);
+            }
+        }
+
+        // Function to filter shop products by category from dropdown
+        function filterShopByCategory(category) {
+            // Uncheck all category filters first
+            categoryFilters.forEach(checkbox => checkbox.checked = false);
+
+            if (category !== 'All') {
+                // Check the specific category filter
+                const targetCheckbox = Array.from(categoryFilters).find(cb => cb.value === category);
+                if (targetCheckbox) {
+                    targetCheckbox.checked = true;
+                }
+            }
+            currentPage = 1; // Reset to first page
+            renderShopProducts(); // Re-render products with new filter
+        }
+
+
+        // Event Listeners for Shop Page Filters
+        priceRange.addEventListener('input', () => {
+            priceRangeValue.innerText = `€${priceRange.value}+`;
+        });
+
+        applyFiltersBtn.addEventListener('click', () => {
+            currentPage = 1; // Reset to first page on filter apply
+            renderShopProducts();
+        });
+
+        sortBySelect.addEventListener('change', () => {
+            currentPage = 1; // Reset to first page on sort change
+            renderShopProducts();
+        });
+
+        document.getElementById('prev-page-btn').addEventListener('click', () => {
+            if (currentPage > 1) {
+                currentPage--;
+                renderShopProducts();
+            }
+        });
+
+        document.getElementById('next-page-btn').addEventListener('click', () => {
+            const totalPages = Math.ceil(filteredProducts.length / productsPerPage);
+            if (currentPage < totalPages) {
+                currentPage++;
+                renderShopProducts();
+            }
+        });
+
+        // --- Articles Page Pagination ---
+        const articlesGrid = document.getElementById('articles-grid');
+        const articlesPerPage = 6;
+        let currentArticlePage = 1;
+        let filteredArticles = [...allArticles]; // All articles initially
+
+        function renderArticles() {
+            articlesGrid.innerHTML = '';
+
+            const totalPages = Math.ceil(filteredArticles.length / articlesPerPage);
+            const startIndex = (currentArticlePage - 1) * articlesPerPage;
+            const endIndex = startIndex + articlesPerPage;
+            const articlesToDisplay = filteredArticles.slice(startIndex, endIndex);
+
+            if (articlesToDisplay.length === 0 && filteredArticles.length > 0 && currentArticlePage > 1) {
+                currentArticlePage = totalPages;
+                renderArticles();
+                return;
+            } else if (articlesToDisplay.length === 0 && filteredArticles.length === 0) {
+                articlesGrid.innerHTML = '<p class="text-center text-gray-500 col-span-full py-8">No articles found.</p>';
+            }
+
+            articlesToDisplay.forEach(article => {
+                const articleCard = `
+                    <div class="bg-gray-50 rounded-xl overflow-hidden shadow-md transition duration-300 hover:shadow-lg">
+                        <img src="${article.img}" alt="${article.title}" class="w-full h-48 object-cover">
+                        <div class="p-6">
+                            <h3 class="font-bold text-xl mb-2">${article.title}</h3>
+                            <p class="text-gray-600 text-sm mb-4">${article.snippet}</p>
+                            <a href="#" class="text-red-600 font-bold hover:underline">READ MORE</a>
+                        </div>
+                    </div>
+                `;
+                articlesGrid.innerHTML += articleCard;
+            });
+
+            renderArticlesPagination(totalPages);
+        }
+
+        function renderArticlesPagination(totalPages) {
+            const paginationNumbersContainer = document.getElementById('articles-pagination-numbers');
+            paginationNumbersContainer.innerHTML = '';
+
+            document.getElementById('articles-prev-page-btn').disabled = currentArticlePage === 1;
+            document.getElementById('articles-next-page-btn').disabled = currentArticlePage === totalPages || totalPages === 0;
+
+            for (let i = 1; i <= totalPages; i++) {
+                const pageButton = document.createElement('button');
+                pageButton.classList.add('px-4', 'py-1', 'rounded-lg', 'border', 'border-gray-300', 'hover:bg-gray-100');
+                if (i === currentArticlePage) {
+                    pageButton.classList.add('bg-black', 'text-white');
+                    pageButton.classList.remove('border-gray-300', 'hover:bg-gray-100');
+                } else {
+                    pageButton.classList.add('text-gray-900');
+                }
+                pageButton.innerText = i;
+                pageButton.addEventListener('click', () => {
+                    currentArticlePage = i;
+                    renderArticles();
+                });
+                paginationNumbersContainer.appendChild(pageButton);
+            }
+        }
+
+        document.getElementById('articles-prev-page-btn').addEventListener('click', () => {
+            if (currentArticlePage > 1) {
+                currentArticlePage--;
+                renderArticles();
+            }
+        });
+
+        document.getElementById('articles-next-page-btn').addEventListener('click', () => {
+            const totalPages = Math.ceil(filteredArticles.length / articlesPerPage);
+            if (currentArticlePage < totalPages) {
+                currentArticlePage++;
+                renderArticles();
+            }
+        });
+
+
+        // --- Search Functionality ---
+        const searchInput = document.getElementById('search-input');
+        const searchButton = document.getElementById('search-button');
+        const searchProductResults = document.getElementById('search-product-results');
+        const searchArticleResults = document.getElementById('search-article-results');
+        const noSearchResults = document.getElementById('no-search-results');
+        const searchProductsTitle = document.getElementById('search-products-title');
+        const searchArticlesTitle = document.getElementById('search-articles-title');
+
+
+        function performSearch() {
+            const query = searchInput.value.toLowerCase().trim();
+            searchProductResults.innerHTML = '';
+            searchArticleResults.innerHTML = '';
+            noSearchResults.classList.add('hidden');
+            searchProductsTitle.classList.remove('hidden'); // Ensure titles are visible by default
+            searchArticlesTitle.classList.remove('hidden');
+
+            if (query === '') {
+                searchProductsTitle.classList.add('hidden');
+                searchArticlesTitle.classList.add('hidden');
+                return; // Don't show results if search is empty
+            }
+
+            const matchingProducts = allProducts.filter(product => 
+                product.name.toLowerCase().includes(query) ||
+                product.category.toLowerCase().includes(query) ||
+                product.subCategory.toLowerCase().includes(query) ||
+                product.color.toLowerCase().includes(query) ||
+                (product.description && product.description.toLowerCase().includes(query))
+            );
+
+            const matchingArticles = allArticles.filter(article =>
+                article.title.toLowerCase().includes(query) ||
+                article.snippet.toLowerCase().includes(query) ||
+                article.category.toLowerCase().includes(query)
+            );
+
+            if (matchingProducts.length === 0 && matchingArticles.length === 0) {
+                noSearchResults.classList.remove('hidden');
+                searchProductsTitle.classList.add('hidden');
+                searchArticlesTitle.classList.add('hidden');
+            } else {
+                if (matchingProducts.length > 0) {
+                    matchingProducts.forEach(product => {
+                        const productCard = `
+                            <div class="product-card bg-white rounded-xl overflow-hidden shadow-md transition duration-300 cursor-pointer" onclick="showProductDetail(${product.id})">
+                                <div class="relative">
+                                    <img src="${product.img}" alt="${product.name}" class="w-full h-64 object-cover">
+                                    ${product.new ? '<span class="absolute top-4 right-4 bg-red-600 text-white text-xs px-2 py-1 rounded">NEW</span>' : ''}
+                                    ${product.bestseller ? '<span class="absolute top-4 right-4 bg-red-600 text-white text-xs px-2 py-1 rounded">BESTSELLER</span>' : ''}
+                                </div>
+                                <div class="p-4">
+                                    <h3 class="font-bold text-lg mb-1">${product.name}</h3>
+                                    <p class="text-gray-600 mb-2">${product.color}</p>
+                                    <p class="font-bold text-black">€${product.price.toFixed(2)}</p>
+                                    <button class="mt-3 w-full bg-black text-white py-2 rounded-lg hover:bg-red-600 transition duration-300" onclick="event.stopPropagation(); addToCart('${product.name}', ${product.price})">
+                                        ADD TO CART
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                        searchProductResults.innerHTML += productCard;
+                    });
+                } else {
+                    searchProductsTitle.classList.add('hidden'); // Hide "Products" title if no results
+                }
+
+                if (matchingArticles.length > 0) {
+                    matchingArticles.forEach(article => {
+                        const articleCard = `
+                            <div class="bg-white rounded-xl overflow-hidden shadow-md transition duration-300 hover:shadow-lg">
+                                <img src="${article.img}" alt="${article.title}" class="w-full h-48 object-cover">
+                                <div class="p-6">
+                                    <h3 class="font-bold text-xl mb-2">${article.title}</h3>
+                                    <p class="text-gray-600 text-sm mb-4">${article.snippet}</p>
+                                    <a href="#" class="text-red-600 font-bold hover:underline">READ MORE</a>
+                                </div>
+                            </div>
+                        `;
+                        searchArticleResults.innerHTML += articleCard;
+                    });
+                } else {
+                    searchArticlesTitle.classList.add('hidden'); // Hide "Articles" title if no results
+                }
+            }
+        }
+
+        searchButton.addEventListener('click', performSearch);
+        searchInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                performSearch();
+            }
+        });
+
+        // --- Discount Modal Logic ---
+        const discountModal = document.getElementById('discount-modal');
+
+        function openModal() {
+            discountModal.style.display = 'flex';
+        }
+
+        function closeModal() {
+            discountModal.style.display = 'none';
+        }
+
+        // Close modal if user clicks outside of it
+        window.addEventListener('click', (event) => {
+            if (event.target === discountModal) {
+                closeModal();
+            }
+        });
+
+        // --- Countdown Timer for New Merch Drop ---
+        function startCountdown(duration, display) {
+            let timer = duration, minutes, seconds;
+            const countdownInterval = setInterval(function () {
+                minutes = parseInt(timer / 60, 10);
+                seconds = parseInt(timer % 60, 10);
+
+                minutes = minutes < 10 ? "0" + minutes : minutes;
+                seconds = seconds < 10 ? "0" + seconds : seconds;
+
+                display.textContent = minutes + ":" + seconds;
+
+                if (--timer < 0) {
+                    clearInterval(countdownInterval);
+                    display.textContent = "00:00";
+                    // Optional: Change text or hide buttons when timer runs out
+                    document.querySelector('#countdown-timer').previousElementSibling.textContent = "NEW MERCH IS HERE!";
+                    document.querySelector('#countdown-timer').nextElementSibling.textContent = "Shop the latest collection now!";
+                    document.querySelector('.flex-col.space-y-4').innerHTML = `
+                        <button class="bg-red-600 hover:bg-red-700 text-white px-8 py-3 rounded-full font-bold transition duration-300 transform hover:scale-105" onclick="showPage('new-drops')">
+                            SHOP NEW DROPS!
+                        </button>
+                    `;
+                }
+            }, 1000);
+        }
+
+        // --- Product Detail Page Logic ---
+        function showProductDetail(productId) {
+            selectedProduct = allProducts.find(p => p.id === productId);
+
+            if (!selectedProduct) {
+                console.error('Product not found:', productId);
+                showPage('shop'); // Redirect to shop if product not found
+                return;
+            }
+
+            // Reset selections and quantity
+            selectedSize = null;
+            selectedColor = null;
+            productQuantity = 1;
+            document.getElementById('product-quantity').textContent = productQuantity;
+
+            // Populate main product details
+            document.getElementById('product-detail-name').textContent = selectedProduct.name;
+            document.getElementById('product-detail-category').textContent = selectedProduct.category + (selectedProduct.subCategory ? ` / ${selectedProduct.subCategory}` : '');
+            document.getElementById('product-detail-price').textContent = `€${selectedProduct.price.toFixed(2)}`;
+            document.getElementById('product-detail-description').textContent = selectedProduct.description;
+            document.getElementById('product-detail-main-img').src = selectedProduct.images[0];
+
+            // Populate thumbnail gallery
+            const thumbnailGallery = document.getElementById('product-detail-thumbnail-gallery');
+            thumbnailGallery.innerHTML = '';
+            selectedProduct.images.forEach((imgSrc, index) => {
+                const img = document.createElement('img');
+                img.src = imgSrc;
+                img.alt = `${selectedProduct.name} thumbnail ${index + 1}`;
+                img.classList.add('w-20', 'h-20', 'object-cover', 'rounded-md', 'cursor-pointer', 'border-2', 'border-gray-200', 'hover:border-red-600', 'transition');
+                img.onclick = () => document.getElementById('product-detail-main-img').src = imgSrc;
+                thumbnailGallery.appendChild(img);
+            });
+
+            // Populate features
+            const featuresList = document.getElementById('product-detail-features');
+            featuresList.innerHTML = '';
+            if (selectedProduct.features && selectedProduct.features.length > 0) {
+                selectedProduct.features.forEach(feature => {
+                    const li = document.createElement('li');
+                    li.textContent = feature;
+                    featuresList.appendChild(li);
+                });
+            } else {
+                featuresList.innerHTML = '<li>No specific features listed.</li>';
+            }
+
+            // Populate colors
+            const colorsContainer = document.getElementById('product-detail-colors');
+            const selectedColorNameSpan = document.getElementById('selected-color-name');
+            colorsContainer.innerHTML = '';
+            if (selectedProduct.colors && selectedProduct.colors.length > 0) {
+                document.getElementById('product-detail-colors-section').classList.remove('hidden');
+                selectedProduct.colors.forEach(color => {
+                    const colorDiv = document.createElement('button');
+                    colorDiv.classList.add('w-8', 'h-8', 'rounded-full', 'border-2', 'border-gray-300', 'color-option');
+                    colorDiv.style.backgroundColor = color.hex;
+                    colorDiv.title = color.name;
+                    colorDiv.onclick = () => selectColor(color.name);
+                    colorsContainer.appendChild(colorDiv);
+                });
+                // Automatically select the first color if available
+                selectColor(selectedProduct.colors[0].name);
+            } else {
+                document.getElementById('product-detail-colors-section').classList.add('hidden');
+                selectedColorNameSpan.textContent = 'N/A';
+                selectedColor = 'N/A';
+            }
+
+            // Populate sizes
+            const sizesContainer = document.getElementById('product-detail-sizes');
+            const selectedSizeNameSpan = document.getElementById('selected-size-name');
+            sizesContainer.innerHTML = '';
+            if (selectedProduct.sizes && Object.keys(selectedProduct.sizes).length > 0) {
+                document.getElementById('product-detail-sizes-section').classList.remove('hidden');
+                for (const size in selectedProduct.sizes) {
+                    const sizeButton = document.createElement('button');
+                    sizeButton.classList.add('w-12', 'h-12', 'rounded-lg', 'border', 'border-gray-300', 'hover:bg-gray-100', 'transition', 'size-option');
+                    sizeButton.textContent = size;
+                    sizeButton.onclick = () => selectSize(size);
+                    if (selectedProduct.sizes[size] === 0) {
+                        sizeButton.classList.add('disabled');
+                        sizeButton.disabled = true;
+                    }
+                    sizesContainer.appendChild(sizeButton);
+                }
+                // Automatically select the first available size
+                const firstAvailableSize = Object.keys(selectedProduct.sizes).find(size => selectedProduct.sizes[size] > 0);
+                if (firstAvailableSize) {
+                    selectSize(firstAvailableSize);
+                } else {
+                    selectedSizeNameSpan.textContent = 'Out of Stock';
+                    selectedSize = null;
+                    document.getElementById('product-detail-availability').innerHTML = 'Availability: <span class="text-red-600">Out of Stock</span>';
+                    document.getElementById('add-to-cart-detail-btn').disabled = true;
+                    document.getElementById('add-to-cart-detail-btn').textContent = 'OUT OF STOCK';
+                }
+            } else {
+                document.getElementById('product-detail-sizes-section').classList.add('hidden');
+                selectedSizeNameSpan.textContent = 'ONE SIZE';
+                selectedSize = 'ONE SIZE';
+                document.getElementById('product-detail-availability').innerHTML = 'Availability: <span class="text-green-600">In Stock</span>';
+                document.getElementById('add-to-cart-detail-btn').disabled = false;
+                document.getElementById('add-to-cart-detail-btn').textContent = 'ADD TO CART';
+            }
+
+            updateAvailability(); // Initial availability check
+
+            // Add to cart button event listener for detail page
+            document.getElementById('add-to-cart-detail-btn').onclick = () => {
+                if (selectedProduct && selectedSize && selectedColor) {
+                    addToCart(selectedProduct.name, selectedProduct.price, selectedSize, selectedColor);
+                } else {
+                    alert('Please select a size and color.');
+                }
+            };
+
+            renderSimilarProducts(selectedProduct.category, selectedProduct.id);
+            showPage('product-detail');
+        }
+
+        function selectSize(size) {
+            selectedSize = size;
+            document.getElementById('selected-size-name').textContent = size;
+            document.querySelectorAll('.size-option').forEach(btn => {
+                btn.classList.remove('selected', 'bg-black', 'text-white');
+                if (btn.textContent === size) {
+                    btn.classList.add('selected', 'bg-black', 'text-white');
+                }
+            });
+            updateAvailability();
+        }
+
+        function selectColor(colorName) {
+            selectedColor = colorName;
+            document.getElementById('selected-color-name').textContent = colorName;
+            document.querySelectorAll('.color-option').forEach(btn => {
+                btn.classList.remove('selected');
+                if (btn.title === colorName) {
+                    btn.classList.add('selected');
+                }
+            });
+            updateAvailability();
+        }
+
+        function updateQuantity(change) {
+            productQuantity += change;
+            if (productQuantity < 1) productQuantity = 1;
+            const maxAvailable = selectedProduct.sizes[selectedSize] || 0;
+            if (productQuantity > maxAvailable && maxAvailable > 0) {
+                productQuantity = maxAvailable;
+                alert(`Only ${maxAvailable} available for this size.`);
+            }
+            document.getElementById('product-quantity').textContent = productQuantity;
+            updateAvailability(); // Re-check availability after quantity change
+        }
+
+        function updateAvailability() {
+            const availabilitySpan = document.getElementById('product-detail-availability').querySelector('span');
+            const addToCartBtn = document.getElementById('add-to-cart-detail-btn');
+
+            if (!selectedProduct || !selectedSize) {
+                availabilitySpan.textContent = 'Please select options';
+                availabilitySpan.className = 'text-gray-500';
+                addToCartBtn.disabled = true;
+                addToCartBtn.textContent = 'SELECT OPTIONS';
+                return;
+            }
+
+            const availableQuantity = selectedProduct.sizes[selectedSize];
+
+            if (availableQuantity > 0) {
+                availabilitySpan.textContent = `In Stock (${availableQuantity} available)`;
+                availabilitySpan.className = 'text-green-600';
+                addToCartBtn.disabled = false;
+                addToCartBtn.textContent = 'ADD TO CART';
+            } else {
+                availabilitySpan.textContent = 'Out of Stock';
+                availabilitySpan.className = 'text-red-600';
+                addToCartBtn.disabled = true;
+                addToCartBtn.textContent = 'OUT OF STOCK';
+            }
+        }
+
+        function renderSimilarProducts(currentCategory, currentProductId) {
+            const similarProductsGrid = document.getElementById('similar-products-grid');
+            similarProductsGrid.innerHTML = '';
+
+            const similar = allProducts.filter(p => 
+                (p.category === currentCategory || p.subCategory === currentCategory) && p.id !== currentProductId
+            ).slice(0, 4); // Get up to 4 similar products
+
+            if (similar.length === 0) {
+                similarProductsGrid.innerHTML = '<p class="text-center text-gray-500 col-span-full py-8">No similar products found.</p>';
+                return;
+            }
+
+            similar.forEach(product => {
+                const productCard = `
+                    <div class="product-card bg-white rounded-xl overflow-hidden shadow-md transition duration-300 cursor-pointer" onclick="showProductDetail(${product.id})">
+                        <div class="relative">
+                            <img src="${product.img}" alt="${product.name}" class="w-full h-64 object-cover">
+                            ${product.new ? '<span class="absolute top-4 right-4 bg-red-600 text-white text-xs px-2 py-1 rounded">NEW</span>' : ''}
+                            ${product.bestseller ? '<span class="absolute top-4 right-4 bg-red-600 text-white text-xs px-2 py-1 rounded">BESTSELLER</span>' : ''}
+                        </div>
+                        <div class="p-4">
+                            <h3 class="font-bold text-lg mb-1">${product.name}</h3>
+                            <p class="text-gray-600 mb-2">${product.color}</p>
+                            <p class="font-bold text-black">€${product.price.toFixed(2)}</p>
+                            <button class="mt-3 w-full bg-black text-white py-2 rounded-lg hover:bg-red-600 transition duration-300" onclick="event.stopPropagation(); addToCart('${product.name}', ${product.price})">
+                                ADD TO CART
+                            </button>
+                        </div>
+                    </div>
+                `;
+                similarProductsGrid.innerHTML += productCard;
+            });
+        }
+
+
+        // --- Initial Loads ---
+        window.addEventListener('load', () => {
+            startAutoScroll(); // Testimonial auto-scroll
+            renderCartItems(); // Initial render for cart items
+            renderShopProducts(); // Initial render for shop page
+            renderArticles(); // Initial render for articles page
+            
+            // Show discount modal after a short delay on home page load
+            setTimeout(() => {
+                if (document.getElementById('home').classList.contains('active-page')) {
+                    openModal();
+                }
+            }, 1500); // 1.5 seconds delay
+
+            // Start the countdown timer when the home page is active
+            if (document.getElementById('home').classList.contains('active-page')) {
+                const tenMinutes = 60 * 10; // 10 minutes in seconds
+                const display = document.querySelector('#countdown-timer');
+                startCountdown(tenMinutes, display);
+            }
+        });
+
+    </script>
+</body>
+</html>
